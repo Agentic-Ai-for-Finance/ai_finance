@@ -1,5 +1,4 @@
-import { AppShell } from "@/components/app-shell";
-import { PlaceholderPanel } from "@/components/placeholder-panel";
+import { redirect } from "next/navigation";
 
 type AccountsPageProps = {
   searchParams: Promise<{
@@ -12,12 +11,12 @@ type AccountsPageProps = {
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
   const { view, start, end, uf } = await searchParams;
-  return (
-    <AppShell section="accounts" queryParams={{ view, start, end, uf }}>
-      <PlaceholderPanel
-        title="Accounts"
-        description="This section is a placeholder in v1 while the credit-card demo is the active scope."
-      />
-    </AppShell>
-  );
+  const params = new URLSearchParams();
+  if (view) params.set("view", view);
+  if (start) params.set("start", start);
+  if (end) params.set("end", end);
+  if (uf) params.set("uf", uf);
+  const query = params.toString();
+
+  redirect(`/checking-accounts${query ? `?${query}` : ""}`);
 }

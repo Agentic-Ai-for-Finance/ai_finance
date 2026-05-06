@@ -21,16 +21,23 @@ import {
   operationFromSlug as debitOperationFromSlug,
   type DebitOperationName,
 } from "@/lib/debit-card-config";
+import {
+  checkingAccountOperations,
+  defaultCheckingAccountViewKey,
+  operationFromSlug as checkingAccountOperationFromSlug,
+  type CheckingAccountOperationName,
+} from "@/lib/checking-account-config";
 import { formatMoney, formatMonthLabel, getChileTodayIso, normalizeMonthValue } from "@/lib/formatters";
 import { fetchDatasetBoundary, fetchLatestUfValue, fetchOperationsRateBoundary } from "@/lib/supabase-queries";
 import {
   fetchDebitDatasetBoundary,
   fetchDebitOperationMetricsBoundary,
 } from "@/lib/supabase-debit-queries";
+import { fetchCheckingAccountDatasetBoundary } from "@/lib/supabase-checking-account-queries";
 import { cn } from "@/lib/utils";
 
 type CreditCardSidebarProps = {
-  section: "credit-cards" | "debit-cards" | "accounts" | "loans";
+  section: "credit-cards" | "debit-cards" | "checking-accounts" | "loans";
   activeOperation?: string;
   queryParams?: Record<string, string | undefined>;
   onNavigate?: () => void;
@@ -75,8 +82,8 @@ export function CreditCardSidebar({
       ? "Credit Cards"
       : section === "debit-cards"
         ? "Debit Cards"
-        : section === "accounts"
-          ? "Accounts"
+        : section === "checking-accounts"
+          ? "Checking Accounts"
           : "Loans";
 
   const router = useRouter();
@@ -92,7 +99,7 @@ export function CreditCardSidebar({
     return params;
   }, [queryParams]);
 
-  const operationName = useMemo<OperationName | DebitOperationName | null>(() => {
+  const operationName = useMemo<OperationName | DebitOperationName | CheckingAccountOperationName | null>(() => {
     if (!activeOperation) {
       return null;
     }
@@ -101,6 +108,9 @@ export function CreditCardSidebar({
     }
     if (section === "debit-cards") {
       return debitOperationFromSlug(activeOperation);
+    }
+    if (section === "checking-accounts") {
+      return checkingAccountOperationFromSlug(activeOperation);
     }
     return null;
   }, [activeOperation, section]);
@@ -118,7 +128,7 @@ export function CreditCardSidebar({
     let isCancelled = false;
 
     async function loadBoundaries() {
-      if ((section !== "credit-cards" && section !== "debit-cards") || !operationName) {
+      if ((section !== "credit-cards" && section !== "debit-cards" && section !== "checking-accounts") || !operationName) {
         setBoundaryState(null);
         return;
       }
@@ -158,22 +168,27 @@ export function CreditCardSidebar({
         }
 
         const chileToday = getChileTodayIso();
-        const [latestMonth, earliestMonth, latestUf] =
-          section === "credit-cards"
+        const [latestMonth, earliestMonth, latestUf] = section === "credit-cards"
+          ? await Promise.all([
+              fetchDatasetBoundary(
+                operationName as Exclude<OperationName, "Total Activation Rate">,
+                "latest"
+              ),
+              fetchDatasetBoundary(
+                operationName as Exclude<OperationName, "Total Activation Rate">,
+                "earliest"
+              ),
+              fetchLatestUfValue(chileToday),
+            ])
+          : section === "debit-cards"
             ? await Promise.all([
-                fetchDatasetBoundary(
-                  operationName as Exclude<OperationName, "Total Activation Rate">,
-                  "latest"
-                ),
-                fetchDatasetBoundary(
-                  operationName as Exclude<OperationName, "Total Activation Rate">,
-                  "earliest"
-                ),
+                fetchDebitDatasetBoundary(operationName as Exclude<DebitOperationName, "Total Activation Rate">, "latest"),
+                fetchDebitDatasetBoundary(operationName as Exclude<DebitOperationName, "Total Activation Rate">, "earliest"),
                 fetchLatestUfValue(chileToday),
               ])
             : await Promise.all([
-                fetchDebitDatasetBoundary(operationName as Exclude<DebitOperationName, "Total Activation Rate">, "latest"),
-                fetchDebitDatasetBoundary(operationName as Exclude<DebitOperationName, "Total Activation Rate">, "earliest"),
+                fetchCheckingAccountDatasetBoundary(operationName as CheckingAccountOperationName, "latest"),
+                fetchCheckingAccountDatasetBoundary(operationName as CheckingAccountOperationName, "earliest"),
                 fetchLatestUfValue(chileToday),
               ]);
 
@@ -181,7 +196,9 @@ export function CreditCardSidebar({
           throw new Error(
             section === "credit-cards"
               ? "No credit-card data is available for this operation."
-              : "No debit-card data is available for this operation."
+              : section === "debit-cards"
+                ? "No debit-card data is available for this operation."
+                : "No checking-account data is available for this operation."
           );
         }
 
@@ -245,6 +262,8 @@ export function CreditCardSidebar({
         params.set("view", isOperationsRateDashboard ? defaultOperationsRateViewKey : defaultViewKey);
       } else if (section === "debit-cards") {
         params.set("view", isOperationsRateDashboard ? defaultDebitOperationsRateViewKey : defaultDebitViewKey);
+      } else if (section === "checking-accounts") {
+        params.set("view", defaultCheckingAccountViewKey);
       }
     }
 
@@ -252,7 +271,7 @@ export function CreditCardSidebar({
   }, [boundaryState, isOperationsRateDashboard, searchParams, section]);
 
   useEffect(() => {
-    if ((section !== "credit-cards" && section !== "debit-cards") || !boundaryState) {
+    if ((section !== "credit-cards" && section !== "debit-cards" && section !== "checking-accounts") || !boundaryState) {
       return;
     }
 
@@ -294,9 +313,16 @@ export function CreditCardSidebar({
         params.set("view", slug === "total-activation-rate" ? defaultOperationsRateViewKey : defaultViewKey);
       } else if (section === "debit-cards") {
         params.set("view", slug === "total-activation-rate" ? defaultDebitOperationsRateViewKey : defaultDebitViewKey);
+      } else if (section === "checking-accounts") {
+        params.set("view", defaultCheckingAccountViewKey);
       }
     }
-    const basePath = section === "debit-cards" ? "/debit-cards" : "/credit-cards";
+    const basePath =
+      section === "debit-cards"
+        ? "/debit-cards"
+        : section === "checking-accounts"
+          ? "/checking-accounts"
+          : "/credit-cards";
     return `${basePath}/${slug}?${params.toString()}`;
   };
 
@@ -306,10 +332,16 @@ export function CreditCardSidebar({
         <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">{sectionTitle}</h2>
       </div>
 
-      {section === "credit-cards" || section === "debit-cards" ? (
+      {section === "credit-cards" || section === "debit-cards" || section === "checking-accounts" ? (
         <div className="space-y-6">
           <div className="space-y-4">
-            {(section === "credit-cards" ? creditCardOperations : debitCardOperations).map((item) => {
+            {(
+              section === "credit-cards"
+                ? creditCardOperations
+                : section === "debit-cards"
+                  ? debitCardOperations
+                  : checkingAccountOperations
+            ).map((item) => {
               const isActive = activeOperation === item.slug;
 
               return (
