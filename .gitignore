@@ -31,3 +31,6 @@ mappings/
 screenshots/
 endpoints-mapping.txt
 
+#MCPs
+.playwright-mcp/
+
