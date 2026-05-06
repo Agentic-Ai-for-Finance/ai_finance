@@ -69,3 +69,23 @@ def test_to_curated_checking_accounts_handles_zero_account_count():
     assert len(curated) == 1
     assert curated[0].real_balance_uf == Decimal("0")
     assert curated[0].average_balance_uf == Decimal("0")
+
+
+def test_to_curated_checking_accounts_caches_uf_lookup_per_month():
+    raw_a = _raw_observation()
+    raw_b = replace(
+        _raw_observation(),
+        institution_code="BCHI",
+        institution_name="Banco de Chile",
+        source_codigo="SBIF_CTACTE_NAT_AGIFI_BCHI_NUM",
+    )
+    lookup_calls: list[date] = []
+
+    def lookup(uf_date: date) -> Decimal:
+        lookup_calls.append(uf_date)
+        return Decimal("40000")
+
+    curated = to_curated_checking_accounts([raw_a, raw_b], uf_lookup=lookup)
+
+    assert len(curated) == 2
+    assert lookup_calls == [date(2026, 4, 15)]

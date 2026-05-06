@@ -18,10 +18,14 @@ def to_curated_checking_accounts(
     uf_lookup: Callable[[date], Decimal],
 ) -> list[CheckingAccountsCuratedObservation]:
     curated_observations: list[CheckingAccountsCuratedObservation] = []
+    uf_cache: dict[date, Decimal] = {}
 
     for observation in raw_observations:
         uf_date = uf_conversion_date(observation.period_month)
-        uf_value = uf_lookup(uf_date)
+        uf_value = uf_cache.get(uf_date)
+        if uf_value is None:
+            uf_value = uf_lookup(uf_date)
+            uf_cache[uf_date] = uf_value
         nominal_balance_millions_clp = observation.nominal_balance_millions_clp
         real_balance_uf = nominal_balance_millions_clp / uf_value
         average_balance_uf = Decimal("0")
