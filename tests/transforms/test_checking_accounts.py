@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 
@@ -51,3 +52,20 @@ def test_to_curated_checking_accounts_enriches_with_uf_and_average_balance():
     assert curated[0].uf_value_used == Decimal("40000")
     assert curated[0].real_balance_uf == Decimal("3.01268345")
     assert curated[0].average_balance_uf == Decimal("1205.07338")
+
+
+def test_to_curated_checking_accounts_handles_zero_account_count():
+    raw = replace(
+        _raw_observation(),
+        account_count=Decimal("0"),
+        nominal_balance_millions_clp=Decimal("0"),
+    )
+
+    curated = to_curated_checking_accounts(
+        [raw],
+        uf_lookup=lambda uf_date: {date(2026, 4, 15): Decimal("40000")}[uf_date],
+    )
+
+    assert len(curated) == 1
+    assert curated[0].real_balance_uf == Decimal("0")
+    assert curated[0].average_balance_uf == Decimal("0")
