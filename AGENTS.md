@@ -416,3 +416,34 @@ Frontend data access:
 - Current debit frontend status:
   - debit dashboard routes are fully wired (no placeholders)
   - market-share and growth table behavior follows current rules above
+
+# Session Handoff (Checking Accounts Rollout)
+
+- Baseline branch/commit for verification: `accounts_feature` at `0ff212c`.
+- Rollout phase status:
+  - Phase 1 SQL migration/contracts: complete (`f311375`)
+  - Phase 2 backend models/transforms/loaders: complete (`cbb96c2`)
+  - Phase 3 source/worker/entrypoint + tests: complete (`cb25df9`)
+  - Phase 4 frontend routes/config/queries + contracts: complete (`9981fd8`)
+  - Phase 5 checking dashboard UI: complete (`0ff212c`)
+- Database migration status:
+  - `db/015_checking_account_metrics.sql` applied to Supabase project `vqvlzfctbvqpouctestu` via MCP migration `015_checking_account_metrics`.
+- Railway deployment status:
+  - checking worker deployed with command `uv run data/checking_accounts.py`.
+  - worker env var workaround remains required: `MISE_AQUA_GITHUB_ATTESTATIONS=false`.
+  - watch paths:
+    - `data/checking_accounts.py`
+    - `data/workers/checking_accounts_worker.py`
+    - `data/sources/checking_accounts.py`
+    - `data/transforms/checking_accounts.py`
+    - `data/loaders/checking_accounts_loader.py`
+    - `data/models/checking_accounts.py`
+    - `data/loaders/bank_credit_card_ops_sync_state_loader.py`
+    - `db/015_checking_account_metrics.sql`
+- Post-deploy verification snapshot (2026-05-06):
+  - `public.checking_accounts_raw`: 531 rows, latest month `2026-02-01`.
+  - `public.checking_accounts_curated`: 531 rows, latest month `2026-02-01`.
+  - `public.cmf_dataset_sync_state`: 8 checking dataset rows with non-null `last_successful_sync_at` and null `last_error`.
+  - spot checks confirm:
+    - `real_balance_uf = nominal_balance_millions_clp / uf_value_used`
+    - `average_balance_uf = real_balance_uf / account_count * 1000000`
