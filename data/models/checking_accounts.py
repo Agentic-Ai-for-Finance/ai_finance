@@ -84,6 +84,8 @@ class CheckingAccountsConfig:
     source_endpoint_base: str
     refresh_frequency: str
     start_date: date
+    account_count_start_date: date
+    nominal_balance_start_date: date
 
 
 @dataclass(frozen=True)
