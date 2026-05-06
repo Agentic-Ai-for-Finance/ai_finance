@@ -1,0 +1,31 @@
+Prepaid Cards Phased Rollout Plan
+
+Phase 0 — Execution scaffold
+- Save prepaid rollout plan in plans/prepaid_plan.txt.
+- Track implementation in phased commits.
+- Update AGENTS.md when durable prepaid context changes.
+
+Phase 1 — Database migration and SQL contracts
+- Add prepaid schema, views, and cmf_datasets metadata.
+- Add customer_type support for prepaid metadata and public views.
+- Set FechaInicio/start_date to 2009-04-01 for every prepaid endpoint.
+
+Phase 2 — Backend models, transforms, loaders
+- Add prepaid domain models, UF enrichment, and derived metrics.
+- Add prepaid raw/curated loaders for ops and operation metrics.
+
+Phase 3 — Source, worker, entrypoint
+- Add prepaid source parsing and worker orchestration.
+- Keep sync-state endpoint-grained and do not advance on failures.
+
+Phase 4 — Frontend config and query layer
+- Add prepaid section config, customer-type route mapping, and paginated Supabase reads.
+
+Phase 5 — Frontend routes and dashboard UI
+- Add Prepaid Cards top-level routes.
+- Add left-nav groups in order: Natural Person, Business.
+- Expose Purchases, Utilities, ATM Withdrawals, and Operation Metrics per world.
+
+Phase 6 — Verification and handoff
+- Run targeted prepaid tests and build validation.
+- Update AGENTS.md with prepaid rollout context.
