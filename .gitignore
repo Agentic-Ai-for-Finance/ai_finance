@@ -11,6 +11,9 @@ wheels/
 
 #Enviroment Varialbes
 *.env
+.env.local
+.env.*
+*.local
 
 #Old files
 archive/
