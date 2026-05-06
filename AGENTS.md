@@ -447,3 +447,12 @@ Frontend data access:
   - spot checks confirm:
     - `real_balance_uf = nominal_balance_millions_clp / uf_value_used`
     - `average_balance_uf = real_balance_uf / account_count * 1000000`
+- Post-deploy fixes applied (2026-05-06):
+  - FechaInicio correction: checking endpoint metadata start dates normalized to `2009-04-01` (CMF query `FechaInicio=20090401`).
+  - corrective SQL migration added: `db/016_fix_checking_accounts_start_dates.sql`.
+  - repopulation runbook confirmed:
+    - clear checking sync rows in `public.cmf_dataset_sync_state` (`dataset_code like 'checking_accounts_%'`)
+    - truncate `public.checking_accounts_raw` and `public.checking_accounts_curated`
+    - restart checking worker
+  - runtime bug fix: avoid `decimal.DivisionUndefined` when `account_count = 0` by storing `average_balance_uf = 0` for those rows.
+  - performance fix: cache UF lookup values per month during checking transform to avoid repeated `public.uf_values` reads for the same `uf_date`.
