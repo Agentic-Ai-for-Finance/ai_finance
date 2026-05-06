@@ -5,6 +5,7 @@ export const bankDisplayNameMap: Record<string, string> = {
   "Banco Consorcio": "Consorcio",
   "Banco del Estado de Chile": "Banco Estado",
   "Banco de Chile": "Banco de Chile",
+  "Banco Bice": "Banco BICE",
   "Banco París": "Banco París",
   "CAT Administradora de Tarjetas": "Cencosud Scotiabank",
   "CAR S.A.": "Banco Ripley",
@@ -16,11 +17,14 @@ export const bankDisplayNameMap: Record<string, string> = {
   "Banco Falabella": "Banco Falabella",
   "Banco Internacional": "Banco Internacional",
   "Banco Santander": "Banco Santander",
+  "Banco Santander-Chile": "Banco Santander",
   "Banco Ripley": "Banco Ripley",
+  "Banco de Credito e Inversiones": "BCI",
   "Consorcio Tarjetas de Crédito": "Tarjeta Consorcio",
   Coopeuch: "Coopeuch",
   "Banco Security": "Banco Security",
   Corpbanca: "Corpbanca",
+  "Scotiabank Chile": "Scotiabank",
   "Tenpo Payments S.A. - Tarjeta Mastercard": "Tenpo",
 };
 
