@@ -33,4 +33,5 @@ endpoints-mapping.txt
 
 #MCPs
 .playwright-mcp/
+node_modules/
 
