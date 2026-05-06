@@ -164,5 +164,4 @@ def test_checking_account_metrics_sql_registers_tables_view_and_metadata():
     assert "SBIF_CTACTE_CINT_JUR_AGIFI_NUM" in sql
     assert "checking_accounts_business_with_interest_nominal_balance" in sql
     assert "SBIF_CTACTE_CINT_JUR_AGIFI_MM$" in sql
-    assert "date '2021-12-01'" in sql
-    assert "date '2025-02-01'" in sql
+    assert "date '2009-04-01'" in sql

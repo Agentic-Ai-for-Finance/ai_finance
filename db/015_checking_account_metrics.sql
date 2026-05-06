@@ -66,7 +66,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'count',
-        date '2021-12-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -79,7 +79,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'millions_clp',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -92,7 +92,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'count',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -105,7 +105,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'millions_clp',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -118,7 +118,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'count',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -131,7 +131,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'millions_clp',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -144,7 +144,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'count',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     ),
     (
@@ -157,7 +157,7 @@ insert into public.cmf_datasets (
         'https://best-sbif-api.azurewebsites.net/Cuadrosv2',
         'monthly',
         'millions_clp',
-        date '2025-02-01',
+        date '2009-04-01',
         true
     )
 on conflict (dataset_code) do update set

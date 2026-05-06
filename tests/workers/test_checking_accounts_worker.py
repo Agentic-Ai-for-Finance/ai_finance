@@ -104,9 +104,9 @@ def _config() -> CheckingAccountsConfig:
         source_description="desc",
         source_endpoint_base="https://cmf.example",
         refresh_frequency="monthly",
-        start_date=date(2021, 12, 1),
-        account_count_start_date=date(2021, 12, 1),
-        nominal_balance_start_date=date(2025, 2, 1),
+        start_date=date(2009, 4, 1),
+        account_count_start_date=date(2009, 4, 1),
+        nominal_balance_start_date=date(2009, 4, 1),
     )
 
 
@@ -147,7 +147,7 @@ def test_load_active_checking_accounts_configs_groups_endpoint_rows():
                 "source_description": "desc",
                 "source_endpoint_base": "https://cmf.example",
                 "refresh_frequency": "monthly",
-                "start_date": "2021-12-01",
+                "start_date": "2009-04-01",
                 "is_active": True,
             },
             {
@@ -159,7 +159,7 @@ def test_load_active_checking_accounts_configs_groups_endpoint_rows():
                 "source_description": "desc",
                 "source_endpoint_base": "https://cmf.example",
                 "refresh_frequency": "monthly",
-                "start_date": "2025-02-01",
+                "start_date": "2009-04-01",
                 "is_active": True,
             },
         ]
@@ -169,8 +169,8 @@ def test_load_active_checking_accounts_configs_groups_endpoint_rows():
 
     assert len(configs) == 1
     assert configs[0].dataset_code == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
-    assert configs[0].account_count_start_date == date(2021, 12, 1)
-    assert configs[0].nominal_balance_start_date == date(2025, 2, 1)
+    assert configs[0].account_count_start_date == date(2009, 4, 1)
+    assert configs[0].nominal_balance_start_date == date(2009, 4, 1)
 
 
 def test_sync_checking_accounts_once_skips_when_source_is_unchanged(monkeypatch):
