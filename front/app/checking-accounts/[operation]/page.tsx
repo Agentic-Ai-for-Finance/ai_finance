@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { PlaceholderPanel } from "@/components/placeholder-panel";
-import { checkingAccountOperationLabelMap, operationFromSlug } from "@/lib/checking-account-config";
+import { CheckingAccountsDashboard } from "@/components/checking-accounts-dashboard";
+import { operationFromSlug } from "@/lib/checking-account-config";
 
 type PageProps = {
   params: Promise<{
@@ -27,9 +27,12 @@ export default async function CheckingAccountsOperationPage({ params, searchPara
 
   return (
     <AppShell section="checking-accounts" activeOperation={operation} queryParams={{ view, start, end, uf }}>
-      <PlaceholderPanel
-        title="Checking Accounts"
-        description={`${checkingAccountOperationLabelMap[resolvedOperation]} dashboard will be enabled in the next phase.`}
+      <CheckingAccountsDashboard
+        operation={resolvedOperation}
+        initialView={view}
+        startMonthParam={start}
+        endMonthParam={end}
+        ufParam={uf}
       />
     </AppShell>
   );

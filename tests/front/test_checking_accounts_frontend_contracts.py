@@ -31,5 +31,7 @@ def test_checking_account_routes_wire_to_operation_slug_model():
 
     assert "section=\"checking-accounts\"" in page_src
     assert "operationFromSlug" in dynamic_src
+    assert "CheckingAccountsDashboard" in dynamic_src
+    assert "PlaceholderPanel" not in dynamic_src
     assert "notFound()" in dynamic_src
     assert "/checking-accounts" in shell_src
