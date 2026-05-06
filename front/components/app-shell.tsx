@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CreditCardSidebar } from "@/components/credit-card-sidebar";
+import { PrepaidCardSidebar } from "@/components/prepaid-card-sidebar";
 import { primarySections } from "@/lib/credit-card-config";
 import { cn } from "@/lib/utils";
 
 type AppShellProps = {
   children: React.ReactNode;
-  section: "credit-cards" | "debit-cards" | "checking-accounts" | "loans";
+  section: "credit-cards" | "debit-cards" | "prepaid-cards" | "checking-accounts" | "loans";
   activeOperation?: string;
   queryParams?: Record<string, string | undefined>;
 };
@@ -124,19 +125,31 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
                 Close
               </button>
             </div>
-            <CreditCardSidebar
-              section={section}
-              activeOperation={activeOperation}
-              queryParams={queryParams}
-              onNavigate={() => setIsMobileSidebarOpen(false)}
-            />
+            {section === "prepaid-cards" ? (
+              <PrepaidCardSidebar
+                activePath={activeOperation}
+                queryParams={queryParams}
+                onNavigate={() => setIsMobileSidebarOpen(false)}
+              />
+            ) : (
+              <CreditCardSidebar
+                section={section}
+                activeOperation={activeOperation}
+                queryParams={queryParams}
+                onNavigate={() => setIsMobileSidebarOpen(false)}
+              />
+            )}
           </aside>
         </div>
       ) : null}
 
       <div className="flex w-full flex-col pb-8 lg:flex-row">
         <aside className="hidden w-full shrink-0 bg-[#eef3fa] px-4 py-6 lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-4rem)] lg:w-56 lg:self-start lg:overflow-y-auto lg:border-r lg:border-slate-200 lg:px-4 lg:pr-4">
-          <CreditCardSidebar section={section} activeOperation={activeOperation} queryParams={queryParams} />
+          {section === "prepaid-cards" ? (
+            <PrepaidCardSidebar activePath={activeOperation} queryParams={queryParams} />
+          ) : (
+            <CreditCardSidebar section={section} activeOperation={activeOperation} queryParams={queryParams} />
+          )}
         </aside>
         <main className="min-w-0 flex-1 px-3 pt-6 sm:px-6 lg:px-8 lg:pt-0">{children}</main>
       </div>
