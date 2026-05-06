@@ -1,10 +1,11 @@
 # Project Context
 
-This repo has three active ETL subsystems and one active frontend demo:
+This repo has four active ETL subsystems and one active frontend demo:
 
 - UF ingestion
 - unified bank credit-card operations ingestion, including card-count totals
 - unified bank debit-card and ATM-only-card operations ingestion, including combined card-count totals
+- unified checking-accounts ingestion
 - `front/` Next.js demo shell
 
 # Runtime
@@ -19,18 +20,21 @@ This repo has three active ETL subsystems and one active frontend demo:
 - UF worker: `uv run data/historical_api_uf.py`
 - Credit-card worker: `uv run data/bank_credit_card_ops.py`
 - Debit-card worker: `uv run data/bank_debit_card_ops.py`
+- Checking-accounts worker: `uv run data/checking_accounts.py`
 
 Primary worker modules:
 
 - `data/workers/uf_worker.py`
 - `data/workers/bank_credit_card_ops_worker.py`
 - `data/workers/bank_debit_card_ops_worker.py`
+- `data/workers/checking_accounts_worker.py`
 
 # External Services
 
 - Supabase is the active backend/database.
 - UF env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CMF_API_KEY`, `BASE_ENDPOINT_CMF_UF`
 - Card env (credit and debit): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optional `BASE_ENDPOINT_CMF_CARDS`
+- Checking-accounts env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optional `BASE_ENDPOINT_CMF_CARDS`
 
 # UF Rules
 
@@ -93,6 +97,27 @@ Primary worker modules:
 - Failed runs must not advance sync state.
 - Debit ops sync state stays separate from UF and credit sync state rows.
 
+# Checking-Accounts Pipeline Rules
+
+- The checking-accounts subsystem is one unified worker covering four account categories:
+  - `Natural Person Without Interest`
+  - `Natural Person With Interest`
+  - `Business Without Interest`
+  - `Business With Interest`
+- For each category, the worker pairs two endpoint measures:
+  - `account_count`
+  - `nominal_balance`
+- Endpoint sync is endpoint-grained:
+  - one `cmf_dataset_sync_state` row for `account_count`
+  - one `cmf_dataset_sync_state` row for `nominal_balance`
+  - no-op only when both latest source months are unchanged and historical coverage is complete
+- Failed runs must not advance sync state.
+- Stored nominal balance is in millions of CLP.
+- UF enrichment rules:
+  - UF lookup uses the 15th day of the same month
+  - `real_balance_uf = nominal_balance_millions_clp / uf_value_used`
+  - `average_balance_uf = real_balance_uf / account_count * 1000000`
+
 # Card Worker Flow
 
 - Read active endpoint rows from `public.cmf_datasets`.
@@ -121,16 +146,20 @@ Primary worker modules:
 - Sources:
   - `data/sources/bank_credit_card_operations.py`
   - `data/sources/bank_debit_card_operations.py`
+  - `data/sources/checking_accounts.py`
 - Transforms:
   - `data/transforms/bank_credit_card_ops.py`
   - `data/transforms/bank_debit_card_ops.py`
+  - `data/transforms/checking_accounts.py`
 - Loaders:
   - `data/loaders/bank_credit_card_ops_loader.py`
   - `data/loaders/bank_debit_card_ops_loader.py`
   - `data/loaders/bank_credit_card_ops_sync_state_loader.py`
+  - `data/loaders/checking_accounts_loader.py`
 - Models:
   - `data/models/bank_credit_card_operations.py`
   - `data/models/bank_debit_card_operations.py`
+  - `data/models/checking_accounts.py`
   - `data/models/uf.py`
 
 # Active Supabase Schema
@@ -157,6 +186,10 @@ Primary worker modules:
   - `public.bank_debit_card_counts_raw`
   - `public.bank_debit_card_counts_curated`
   - `public.bank_debit_card_operation_metrics` view
+- Checking accounts:
+  - `public.checking_accounts_raw`
+  - `public.checking_accounts_curated`
+  - `public.checking_accounts_metrics` view
 
 # Data Contracts
 
@@ -206,6 +239,7 @@ Active migration set:
 - `db/012_operations_rate_view_add_cards_with_operations_fields.sql`
 - `db/013_non_banking_credit_card_endpoints.sql`
 - `db/014_debit_card_metrics.sql`
+- `db/015_checking_account_metrics.sql`
 
 # Repo Structure
 
@@ -220,6 +254,7 @@ Active migration set:
 - Railway should run workers as worker services, not web apps.
 - Credit-card worker deploy command: `uv run data/bank_credit_card_ops.py`
 - Debit-card worker deploy command: `uv run data/bank_debit_card_ops.py`
+- Checking-accounts worker deploy command: `uv run data/checking_accounts.py`
 - Railway worker env var workaround (mise/aqua uv attestation check): set `MISE_AQUA_GITHUB_ATTESTATIONS=false`.
 
 # Frontend Direction
@@ -230,12 +265,16 @@ Active migration set:
 - Validate with `npm run build` in `front/`.
 - Future auth is expected, and Clerk is the likely provider, but auth is not approved yet.
 - Do not add Clerk config, auth middleware, protected routes, user/session models, or auth tables until an auth phase is explicitly approved.
+- When auth work is approved, do a Layer 2 security pass (Auth Surfaces + RLS):
+  - enumerate every API route/endpoint and confirm each is gated by auth + authorization (role/permissions) with middleware matcher coverage
+  - ensure Supabase RLS is enabled for any user data and policies check `auth.uid()` (or equivalent) rather than relying on UI-only hiding
+  - verify no route is only "hidden" in the frontend while still publicly callable
 
 # Frontend Product Rules
 
 - Top bar uses the Ta-Claro logo.
-- Primary sections are `Credit Cards`, `Debit Cards`, `Accounts`, `Loans`.
-- `Credit Cards` and `Debit Cards` are functional in v1; `Accounts` and `Loans` remain placeholders.
+- Primary sections are `Credit Cards`, `Debit Cards`, `Checking Accounts`, `Loans`.
+- `Credit Cards`, `Debit Cards`, and `Checking Accounts` are functional in v1; `Loans` remains a placeholder.
 - Debit-card work should reuse the credit-card frontend pattern and interaction model rather than redesigning the shell.
 
 Credit-card routes:
@@ -251,6 +290,14 @@ Debit-card routes:
 - `/debit-cards/transactions`
 - `/debit-cards/atm-withdrawals`
 - `/debit-cards/total-activation-rate`
+
+Checking-accounts routes:
+
+- `/checking-accounts`
+- `/checking-accounts/personas-naturales-sin-intereses`
+- `/checking-accounts/personas-naturales-con-intereses`
+- `/checking-accounts/personas-juridicas-sin-intereses`
+- `/checking-accounts/personas-juridicas-con-intereses`
 
 Current shell/UI constraints:
 
@@ -268,7 +315,7 @@ Current shell/UI constraints:
   - controls remain tappable and readable down to ~320px width
 - On screens below `lg`, Credit Cards navigation/inputs use a collapsible drawer opened from the top bar `Menu` button.
 - On `lg` and above, keep the current sticky left sidebar behavior.
-- Mobile top nav uses a horizontally scrollable section row (`Credit Cards`, `Debit Cards`, `Accounts`, `Loans`) while desktop keeps centered nav.
+- Mobile top nav uses a horizontally scrollable section row (`Credit Cards`, `Debit Cards`, `Checking Accounts`, `Loans`) while desktop keeps centered nav.
 - Chart tooltips should stay inside viewport bounds on small screens.
 - Summary table may use local horizontal overflow as a safety fallback, but should use compact spacing on small screens before overflow is needed.
 
@@ -308,6 +355,18 @@ Debit-card behavior:
   - `Supplementary Activation Rate`
 - Operational denominator for `Operations per Active Card` uses the combined debit + ATM-only active-card base.
 
+Checking-accounts behavior:
+
+- Section title is `Checking Accounts`.
+- Analysis tab is shareable via the `view` query param.
+- Category pages expose:
+  - `Volume`
+  - `Number of Accounts`
+  - `Average Balance`
+- `/checking-accounts` is an overview route (not an aggregated metrics dashboard).
+- Share-applicable table behavior applies to `Volume` and `Number of Accounts`.
+- `Average Balance` is not treated as a market-share metric.
+
 Formatting and metric rules:
 
 - `Volume ($)` uses UF-adjusted CLP volume.
@@ -338,6 +397,7 @@ Frontend data access:
   - `public.bank_credit_card_operations_rate_metrics`
   - `public.bank_debit_card_ops_metrics`
   - `public.bank_debit_card_operation_metrics`
+  - `public.checking_accounts_metrics`
   - `public.uf_values`
 - The browser path is public read-only; there is no login in v1.
 - Frontend must auto-paginate Supabase reads for larger date ranges and must not treat missing rows as zero values.
