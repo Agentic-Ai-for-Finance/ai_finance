@@ -1,11 +1,12 @@
 # Project Context
 
-This repo has four active ETL subsystems and one active frontend demo:
+This repo has five active ETL subsystems and one active frontend demo:
 
 - UF ingestion
 - unified bank credit-card operations ingestion, including card-count totals
 - unified bank debit-card and ATM-only-card operations ingestion, including combined card-count totals
 - unified checking-accounts ingestion
+- unified prepaid-card operations ingestion, split by natural person and business
 - `front/` Next.js demo shell
 
 # Runtime
@@ -21,6 +22,7 @@ This repo has four active ETL subsystems and one active frontend demo:
 - Credit-card worker: `uv run data/bank_credit_card_ops.py`
 - Debit-card worker: `uv run data/bank_debit_card_ops.py`
 - Checking-accounts worker: `uv run data/checking_accounts.py`
+- Prepaid-card worker: `uv run data/prepaid_card_ops.py`
 
 Primary worker modules:
 
@@ -28,12 +30,14 @@ Primary worker modules:
 - `data/workers/bank_credit_card_ops_worker.py`
 - `data/workers/bank_debit_card_ops_worker.py`
 - `data/workers/checking_accounts_worker.py`
+- `data/workers/prepaid_card_ops_worker.py`
 
 # External Services
 
 - Supabase is the active backend/database.
 - UF env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CMF_API_KEY`, `BASE_ENDPOINT_CMF_UF`
 - Card env (credit and debit): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optional `BASE_ENDPOINT_CMF_CARDS`
+- Prepaid env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optional `BASE_ENDPOINT_CMF_CARDS`
 - Checking-accounts env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optional `BASE_ENDPOINT_CMF_CARDS`
 
 # UF Rules
@@ -97,6 +101,28 @@ Primary worker modules:
 - Failed runs must not advance sync state.
 - Debit ops sync state stays separate from UF and credit sync state rows.
 
+# Prepaid Pipeline Rules
+
+- The prepaid subsystem is one unified worker covering two worlds:
+  - `Natural Person`
+  - `Business`
+- Canonical operation types:
+  - `Purchases`
+  - `Utilities`
+  - `ATM Withdrawals`
+- Operation-metrics canonical operation type: `Total Activation Rate`
+- Prepaid operation endpoints use:
+  - `FechaInicio=20090401`
+  - `FechaFin` = run date
+  - `from=reload`
+- Each world uses two operation-metrics count endpoints:
+  - total active cards
+  - cards with operations
+- Canonical ratio:
+  - `operations_rate = total_cards_with_operations / total_active_cards`
+- Failed runs must not advance sync state.
+- Prepaid sync state stays separate from UF, credit, debit, and checking rows.
+
 # Checking-Accounts Pipeline Rules
 
 - The checking-accounts subsystem is one unified worker covering four account categories:
@@ -147,19 +173,23 @@ Primary worker modules:
   - `data/sources/bank_credit_card_operations.py`
   - `data/sources/bank_debit_card_operations.py`
   - `data/sources/checking_accounts.py`
+  - `data/sources/prepaid_card_operations.py`
 - Transforms:
   - `data/transforms/bank_credit_card_ops.py`
   - `data/transforms/bank_debit_card_ops.py`
   - `data/transforms/checking_accounts.py`
+  - `data/transforms/prepaid_card_ops.py`
 - Loaders:
   - `data/loaders/bank_credit_card_ops_loader.py`
   - `data/loaders/bank_debit_card_ops_loader.py`
   - `data/loaders/bank_credit_card_ops_sync_state_loader.py`
   - `data/loaders/checking_accounts_loader.py`
+  - `data/loaders/prepaid_card_ops_loader.py`
 - Models:
   - `data/models/bank_credit_card_operations.py`
   - `data/models/bank_debit_card_operations.py`
   - `data/models/checking_accounts.py`
+  - `data/models/prepaid_card_operations.py`
   - `data/models/uf.py`
 
 # Active Supabase Schema
@@ -178,6 +208,10 @@ Primary worker modules:
   - `public.bank_debit_card_ops_raw`
   - `public.bank_debit_card_ops_curated`
   - `public.bank_debit_card_ops_metrics` view
+- Prepaid ops:
+  - `public.prepaid_card_ops_raw`
+  - `public.prepaid_card_ops_curated`
+  - `public.prepaid_card_ops_metrics` view
 - Card counts / operations rate:
   - `public.bank_credit_card_counts_raw`
   - `public.bank_credit_card_counts_curated`
@@ -186,6 +220,10 @@ Primary worker modules:
   - `public.bank_debit_card_counts_raw`
   - `public.bank_debit_card_counts_curated`
   - `public.bank_debit_card_operation_metrics` view
+- Prepaid counts / operation metrics:
+  - `public.prepaid_card_counts_raw`
+  - `public.prepaid_card_counts_curated`
+  - `public.prepaid_card_operation_metrics` view
 - Checking accounts:
   - `public.checking_accounts_raw`
   - `public.checking_accounts_curated`
@@ -240,6 +278,7 @@ Active migration set:
 - `db/013_non_banking_credit_card_endpoints.sql`
 - `db/014_debit_card_metrics.sql`
 - `db/015_checking_account_metrics.sql`
+- `db/017_prepaid_card_metrics.sql`
 
 # Repo Structure
 
@@ -273,8 +312,8 @@ Active migration set:
 # Frontend Product Rules
 
 - Top bar uses the Ta-Claro logo.
-- Primary sections are `Credit Cards`, `Debit Cards`, `Checking Accounts`, `Loans`.
-- `Credit Cards`, `Debit Cards`, and `Checking Accounts` are functional in v1; `Loans` remains a placeholder.
+- Primary sections are `Credit Cards`, `Debit Cards`, `Prepaid Cards`, `Checking Accounts`, `Loans`.
+- `Credit Cards`, `Debit Cards`, `Prepaid Cards`, and `Checking Accounts` are functional in v1; `Loans` remains a placeholder.
 - Debit-card work should reuse the credit-card frontend pattern and interaction model rather than redesigning the shell.
 
 Credit-card routes:
@@ -290,6 +329,18 @@ Debit-card routes:
 - `/debit-cards/transactions`
 - `/debit-cards/atm-withdrawals`
 - `/debit-cards/total-activation-rate`
+
+Prepaid-card routes:
+
+- `/prepaid-cards`
+- `/prepaid-cards/natural-person/purchases`
+- `/prepaid-cards/natural-person/utilities`
+- `/prepaid-cards/natural-person/atm-withdrawals`
+- `/prepaid-cards/natural-person/total-activation-rate`
+- `/prepaid-cards/business/purchases`
+- `/prepaid-cards/business/utilities`
+- `/prepaid-cards/business/atm-withdrawals`
+- `/prepaid-cards/business/total-activation-rate`
 
 Checking-accounts routes:
 
@@ -355,6 +406,19 @@ Debit-card behavior:
   - `Supplementary Activation Rate`
 - Operational denominator for `Operations per Active Card` uses the combined debit + ATM-only active-card base.
 
+Prepaid-card behavior:
+
+- Section title is `Prepaid Cards`.
+- Left sidebar groups routes with `Natural Person` first, then `Business`.
+- Analysis tab is shareable via the `view` query param.
+- Operation pages expose `Volume`, `Transactions`, `Avg. Transaction`, and `Operations per Active Card`.
+- Operation Metrics page exposes:
+  - `Total Active Cards`
+  - `Total Cards with Operations`
+  - `Total Activation Rate`
+- Prepaid v1 uses only the provided non-banking issuer endpoints.
+- Aggregate `TX_*` prepaid totals are not exposed as their own frontend pages in v1.
+
 Checking-accounts behavior:
 
 - Section title is `Checking Accounts`.
@@ -397,6 +461,8 @@ Frontend data access:
   - `public.bank_credit_card_operations_rate_metrics`
   - `public.bank_debit_card_ops_metrics`
   - `public.bank_debit_card_operation_metrics`
+  - `public.prepaid_card_ops_metrics`
+  - `public.prepaid_card_operation_metrics`
   - `public.checking_accounts_metrics`
   - `public.uf_values`
 - The browser path is public read-only; there is no login in v1.

@@ -165,3 +165,25 @@ def test_checking_account_metrics_sql_registers_tables_view_and_metadata():
     assert "checking_accounts_business_with_interest_nominal_balance" in sql
     assert "SBIF_CTACTE_CINT_JUR_AGIFI_MM$" in sql
     assert "date '2009-04-01'" in sql
+
+
+def test_prepaid_card_metrics_sql_registers_tables_views_and_metadata():
+    sql = Path("db/017_prepaid_card_metrics.sql").read_text()
+
+    assert "add column if not exists customer_type text" in sql
+    assert "create table if not exists public.prepaid_card_ops_raw" in sql
+    assert "create table if not exists public.prepaid_card_ops_curated" in sql
+    assert "create table if not exists public.prepaid_card_counts_raw" in sql
+    assert "create table if not exists public.prepaid_card_counts_curated" in sql
+    assert "create or replace view public.prepaid_card_ops_metrics" in sql
+    assert "create or replace view public.prepaid_card_operation_metrics" in sql
+    assert "prepaid_card_ops_natural_person_purchases_transaction_count" in sql
+    assert "CMF_TPREP_NBANC_TX_NAT_COMP_AGIFI_NUM_MONT" in sql
+    assert "prepaid_card_ops_business_utilities_nominal_volume" in sql
+    assert "CMF_TPREP_NBANC_TX_JUR_CSERV_AGIFI_MM$_MONT" in sql
+    assert "prepaid_card_active_cards_total_natural_person" in sql
+    assert "CMF_TPREP_NBANC_VIG_NAT_AGIFI_NUM_MONT" in sql
+    assert "prepaid_card_cards_with_operations_business" in sql
+    assert "CMF_TPREP_NBANC_COPE_JUR_AGIFI_NUM_MONT" in sql
+    assert sql.count("date '2009-04-01'") >= 16
+    assert "CMF_TPREP_NBANC_TX_NAT_AGIFI_NUM_MONT" not in sql
