@@ -140,3 +140,28 @@ def test_debit_card_metrics_sql_registers_debit_tables_views_and_metadata():
     assert "SBIF_TATM_COPE_AGIFI_NUM" in sql
     assert "Primary Activation Rate" not in sql
     assert "Supplementary Activation Rate" not in sql
+
+
+def test_checking_account_metrics_sql_registers_tables_view_and_metadata():
+    sql = Path("db/015_checking_account_metrics.sql").read_text()
+
+    assert "create table if not exists public.checking_accounts_raw" in sql
+    assert "create table if not exists public.checking_accounts_curated" in sql
+    assert "create or replace view public.checking_accounts_metrics" in sql
+    assert "checking_accounts_natural_person_without_interest_account_count" in sql
+    assert "SBIF_CTACTE_NAT_AGIFI_NUM" in sql
+    assert "checking_accounts_natural_person_without_interest_nominal_balance" in sql
+    assert "SBIF_CTACTE_NAT_AGIFI_MM$" in sql
+    assert "checking_accounts_natural_person_with_interest_account_count" in sql
+    assert "SBIF_CTACTE_CINT_NAT_AGIFI_NUM" in sql
+    assert "checking_accounts_natural_person_with_interest_nominal_balance" in sql
+    assert "SBIF_CTACTE_CINT_NAT_AGIFI_MM$" in sql
+    assert "checking_accounts_business_without_interest_account_count" in sql
+    assert "SBIF_CTACTE_JUR_AGIFI_NUM" in sql
+    assert "checking_accounts_business_without_interest_nominal_balance" in sql
+    assert "SBIF_CTACTE_JUR_AGIFI_MM$" in sql
+    assert "checking_accounts_business_with_interest_account_count" in sql
+    assert "SBIF_CTACTE_CINT_JUR_AGIFI_NUM" in sql
+    assert "checking_accounts_business_with_interest_nominal_balance" in sql
+    assert "SBIF_CTACTE_CINT_JUR_AGIFI_MM$" in sql
+    assert "date '2009-04-01'" in sql

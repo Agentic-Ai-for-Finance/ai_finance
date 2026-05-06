@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 type AppShellProps = {
   children: React.ReactNode;
-  section: "credit-cards" | "debit-cards" | "accounts" | "loans";
+  section: "credit-cards" | "debit-cards" | "checking-accounts" | "loans";
   activeOperation?: string;
   queryParams?: Record<string, string | undefined>;
 };

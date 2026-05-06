@@ -11,6 +11,9 @@ wheels/
 
 #Enviroment Varialbes
 *.env
+.env.local
+.env.*
+*.local
 
 #Old files
 archive/
@@ -27,4 +30,8 @@ plans/
 mappings/
 screenshots/
 endpoints-mapping.txt
+
+#MCPs
+.playwright-mcp/
+node_modules/
 
