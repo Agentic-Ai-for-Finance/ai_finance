@@ -569,3 +569,11 @@ Frontend data access:
 - Loans UX:
   - route `/loans` shows a minimal italic `Soon` message
   - legacy sidebar copy (`Only the Credit Cards section is connected in v1...`) removed.
+- Category URL behavior fix (2026-05-07):
+  - top category links now resolve to clean landing URLs without carrying dashboard query params:
+    - `/credit-cards`
+    - `/debit-cards`
+    - `/prepaid-cards`
+    - `/checking-accounts`
+  - fixed Prepaid landing-page navigation so repeated clicks do not re-inject `view/start/end/uf` into `/prepaid-cards`.
+  - dashboard operation routes still preserve query params for shareable analysis state.
