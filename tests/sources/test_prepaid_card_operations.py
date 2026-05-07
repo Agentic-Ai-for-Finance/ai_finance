@@ -6,6 +6,7 @@ from data.models.prepaid_card_operations import (
     PREPAID_CARD_OPS_NATURAL_PERSON_PURCHASES_DATASET,
 )
 from data.sources.prepaid_card_operations import (
+    _max_present,
     build_cmf_cuadros_url,
     derive_institution_code,
     merge_operation_measure_observations,
@@ -116,3 +117,8 @@ def test_parse_card_count_payload_and_merge_rows():
     assert raw_counts[0].card_count == Decimal("100")
     assert operation_rows[0].transaction_count == Decimal("2500")
     assert operation_rows[0].nominal_volume_millions_clp == Decimal("1200")
+
+
+def test_max_present_ignores_none_values():
+    assert _max_present([None, None]) is None
+    assert _max_present([date(2026, 2, 1), None, date(2026, 3, 1)]) == date(2026, 3, 1)

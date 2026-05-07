@@ -14,6 +14,13 @@ from data.models.prepaid_card_operations import (
 )
 
 
+def _max_present(values):
+    present_values = [value for value in values if value is not None]
+    if not present_values:
+        return None
+    return max(present_values)
+
+
 @dataclass(frozen=True)
 class PrepaidCardOpsObservationBatch:
     raw_observations: list[PrepaidCardOpsRawObservation]
@@ -299,9 +306,20 @@ async def fetch_operation_batch(client, *, config: PrepaidCardOperationConfig, f
         nominal_volume_observations=nominal_volume_observations,
     )
 
-    latest_transaction_count_source_month = max((observation.period_month for observation in transaction_count_observations), default=None)
-    latest_nominal_volume_source_month = max((observation.period_month for observation in nominal_volume_observations), default=None)
-    latest_source_month = max((latest_transaction_count_source_month, latest_nominal_volume_source_month), default=None)
+    latest_transaction_count_source_month = max(
+        (observation.period_month for observation in transaction_count_observations),
+        default=None,
+    )
+    latest_nominal_volume_source_month = max(
+        (observation.period_month for observation in nominal_volume_observations),
+        default=None,
+    )
+    latest_source_month = _max_present(
+        [
+            latest_transaction_count_source_month,
+            latest_nominal_volume_source_month,
+        ]
+    )
 
     return PrepaidCardOpsObservationBatch(
         raw_observations=raw_observations,
