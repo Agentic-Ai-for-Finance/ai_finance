@@ -353,12 +353,14 @@ Checking-accounts routes:
 Current shell/UI constraints:
 
 - Top navbar is centered, text-first, with underline active state and a visual-only `Login` CTA.
+- On desktop main nav (`lg` and above), category labels expose hover dropdown menus with the same subcategory links shown in the left sidebar.
 - Left sidebar is minimalist text nav; Credit Cards shows the operation subroutes.
 - Bank selection lives under the chart in `Banks shown` with `All`, `None`, and `Reset`.
 - Bottom summary table keeps the `Others` row for share-applicable metrics and uses month-explicit comparison headers.
 - Chart controls and rendering should stay aligned with the restored `origin/main` implementation.
 - Sidebar uses a `Credit Cards` macro title and no `Live` badges.
 - Dashboard copy should describe the product, not repeat the shareable route.
+- Category landing pages (`/credit-cards`, `/debit-cards`, `/prepaid-cards`, `/checking-accounts`) use full background copy (no rounded panel container), larger typography, and the curated text from `descriptions/landing-page-category.txt`.
 - Layout should use full width without requiring horizontal chart scroll.
 - Mobile baseline is required:
   - no text overlap/clipping at small widths
@@ -367,6 +369,7 @@ Current shell/UI constraints:
 - On screens below `lg`, Credit Cards navigation/inputs use a collapsible drawer opened from the top bar `Menu` button.
 - On `lg` and above, keep the current sticky left sidebar behavior.
 - Mobile top nav uses a horizontally scrollable section row (`Credit Cards`, `Debit Cards`, `Checking Accounts`, `Loans`) while desktop keeps centered nav.
+- Loans page remains a placeholder and currently renders a minimal italic `Soon` welcome message.
 - Chart tooltips should stay inside viewport bounds on small screens.
 - Summary table may use local horizontal overflow as a safety fallback, but should use compact spacing on small screens before overflow is needed.
 
@@ -552,3 +555,17 @@ Frontend data access:
     - restart checking worker
   - runtime bug fix: avoid `decimal.DivisionUndefined` when `account_count = 0` by storing `average_balance_uf = 0` for those rows.
   - performance fix: cache UF lookup values per month during checking transform to avoid repeated `public.uf_values` reads for the same `uf_date`.
+
+# Session Handoff (Frontend Nav/Landing Refresh)
+
+- Date: 2026-05-07.
+- Desktop top navbar behavior:
+  - hover dropdown added per category (`Credit Cards`, `Debit Cards`, `Prepaid Cards`, `Checking Accounts`) with subcategory routes aligned to left-sidebar navigation.
+- Category landing pages:
+  - routes: `/credit-cards`, `/debit-cards`, `/prepaid-cards`, `/checking-accounts`
+  - include overview text, subcategories, data availability, and key information
+  - canonical copy source: `descriptions/landing-page-category.txt`
+  - styling updated to remove rounded panel container and increase font sizing/spacing.
+- Loans UX:
+  - route `/loans` shows a minimal italic `Soon` message
+  - legacy sidebar copy (`Only the Credit Cards section is connected in v1...`) removed.
