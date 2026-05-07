@@ -63,9 +63,9 @@ export function PrepaidCardSidebar({
 
   const pathSegments = useMemo(() => pathname.split("/").filter(Boolean), [pathname]);
   const activeCustomerTypeSlug = pathSegments[1] ?? "natural-person";
-  const activeOperationSlug = pathSegments[2] ?? activePath ?? "purchases";
+  const activeOperationSlug = pathSegments[2] ?? activePath;
   const activeCustomerType = customerTypeFromSlug(activeCustomerTypeSlug);
-  const activeOperation = operationFromSlug(activeOperationSlug);
+  const activeOperation = activeOperationSlug ? operationFromSlug(activeOperationSlug) : null;
   const isOperationsRateDashboard =
     activeOperation !== null && isPrepaidOperationsRateOperation(activeOperation);
 

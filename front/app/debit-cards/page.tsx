@@ -1,20 +1,9 @@
 import { AppShell } from "@/components/app-shell";
 import { CategoryLandingPanel } from "@/components/category-landing-panel";
 
-type DebitCardsPageProps = {
-  searchParams: Promise<{
-    view?: string;
-    start?: string;
-    end?: string;
-    uf?: string;
-  }>;
-};
-
-export default async function DebitCardsPage({ searchParams }: DebitCardsPageProps) {
-  const { view, start, end, uf } = await searchParams;
-
+export default function DebitCardsPage() {
   return (
-    <AppShell section="debit-cards" queryParams={{ view, start, end, uf }}>
+    <AppShell section="debit-cards">
       <CategoryLandingPanel
         title="Debit Cards"
         description="Explore banks' debit-cards and ATM-only-cards performance across time to get insights for your business."

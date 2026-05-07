@@ -1,20 +1,9 @@
 import { AppShell } from "@/components/app-shell";
 import { CategoryLandingPanel } from "@/components/category-landing-panel";
 
-type CreditCardsPageProps = {
-  searchParams: Promise<{
-    view?: string;
-    start?: string;
-    end?: string;
-    uf?: string;
-  }>;
-};
-
-export default async function CreditCardsPage({ searchParams }: CreditCardsPageProps) {
-  const { view, start, end, uf } = await searchParams;
-
+export default function CreditCardsPage() {
   return (
-    <AppShell section="credit-cards" queryParams={{ view, start, end, uf }}>
+    <AppShell section="credit-cards">
       <CategoryLandingPanel
         title="Credit Cards"
         description="Explore banks' and non-banks' credit-cards performance across time to get insights for your business. Choose one metric to open the full dashboard with filters and comparisons."

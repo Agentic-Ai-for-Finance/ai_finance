@@ -1,20 +1,9 @@
 import { AppShell } from "@/components/app-shell";
 import { CategoryLandingPanel } from "@/components/category-landing-panel";
 
-type CheckingAccountsPageProps = {
-  searchParams: Promise<{
-    view?: string;
-    start?: string;
-    end?: string;
-    uf?: string;
-  }>;
-};
-
-export default async function CheckingAccountsPage({ searchParams }: CheckingAccountsPageProps) {
-  const { view, start, end, uf } = await searchParams;
-
+export default function CheckingAccountsPage() {
   return (
-    <AppShell section="checking-accounts" queryParams={{ view, start, end, uf }}>
+    <AppShell section="checking-accounts">
       <CategoryLandingPanel
         title="Checking Accounts"
         description="Explore banks' checking-account performance by account category to get insights for your business"

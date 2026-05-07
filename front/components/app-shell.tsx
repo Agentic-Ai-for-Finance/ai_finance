@@ -123,7 +123,7 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
               return (
                 <Link
                   key={item.slug}
-                  href={mergedHref(item.href)}
+                  href={item.href}
                   className={cn(
                     "border-b-2 pb-0.5 text-[10px] font-medium uppercase tracking-[0.18em] transition",
                     isActive ? "border-brand text-slate-950" : "border-transparent text-slate-500 hover:text-slate-950"
@@ -149,7 +149,7 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
               return (
                 <div key={item.slug} className="group relative">
                   <Link
-                    href={mergedHref(item.href)}
+                    href={item.href}
                     className={cn(
                       "border-b-2 pb-0.5 text-[11px] font-medium uppercase tracking-[0.28em] transition",
                       isActive ? "border-brand text-slate-950" : "border-transparent text-slate-500 hover:text-slate-950"

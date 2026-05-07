@@ -1,20 +1,9 @@
 import { AppShell } from "@/components/app-shell";
 import { CategoryLandingPanel } from "@/components/category-landing-panel";
 
-type PrepaidCardsPageProps = {
-  searchParams: Promise<{
-    view?: string;
-    start?: string;
-    end?: string;
-    uf?: string;
-  }>;
-};
-
-export default async function PrepaidCardsPage({ searchParams }: PrepaidCardsPageProps) {
-  const { view, start, end, uf } = await searchParams;
-
+export default function PrepaidCardsPage() {
   return (
-    <AppShell section="prepaid-cards" queryParams={{ view, start, end, uf }}>
+    <AppShell section="prepaid-cards">
       <CategoryLandingPanel
         title="Prepaid Cards"
         description="Review prepaid-card metrics for natural-person and business issuers."
