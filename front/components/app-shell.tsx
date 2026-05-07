@@ -96,7 +96,7 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
       <header className="sticky top-0 z-50 bg-white text-slate-950 shadow-sm">
         <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:hidden">
           <Link href={mergedHref("/credit-cards/purchases?view=volume")} className="min-w-0">
-            <p className="truncate text-lg font-semibold tracking-tight text-slate-950">Ta-Claro</p>
+            <p className="truncate text-lg font-semibold tracking-tight text-slate-950">Taclaro</p>
           </Link>
           <div className="flex items-center gap-2">
             <button
@@ -138,7 +138,7 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
 
         <div className="hidden h-16 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 sm:px-6 lg:grid lg:px-8">
           <Link href={mergedHref("/credit-cards/purchases?view=volume")} className="justify-self-start">
-            <p className="text-xl font-semibold tracking-tight text-slate-950">Ta-Claro</p>
+            <p className="text-xl font-semibold tracking-tight text-slate-950">Taclaro</p>
           </Link>
 
           <nav className="flex flex-wrap items-center justify-center gap-7">

@@ -6,7 +6,7 @@ export default function NotFoundPage() {
     <AppShell section="credit-cards">
       <PlaceholderPanel
         title="Page not found"
-        description="The requested route does not exist in the current Ta-Claro demo."
+        description="The requested route does not exist in the current Taclaro demo."
       />
     </AppShell>
   );

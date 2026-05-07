@@ -311,7 +311,7 @@ Active migration set:
 
 # Frontend Product Rules
 
-- Top bar uses the Ta-Claro logo.
+- Top bar uses the Taclaro logo.
 - Primary sections are `Credit Cards`, `Debit Cards`, `Prepaid Cards`, `Checking Accounts`, `Loans`.
 - `Credit Cards`, `Debit Cards`, `Prepaid Cards`, and `Checking Accounts` are functional in v1; `Loans` remains a placeholder.
 - Debit-card work should reuse the credit-card frontend pattern and interaction model rather than redesigning the shell.
