@@ -394,6 +394,7 @@ def _get_observations(series: dict[str, Any]) -> list[dict[str, Any]]:
         series.get("Obs")
         or series.get("obs")
         or series.get("observations")
+        or series.get("observaciones")
         or series.get("data")
         or []
     )

@@ -73,6 +73,30 @@ def test_parse_operation_payload_builds_prepaid_observations():
     assert observations[0].value == Decimal("2500")
 
 
+def test_parse_operation_payload_accepts_observaciones_shape():
+    payload = {
+        "series": [
+            {
+                "id": 1,
+                "codigo": "CMF_TPREP_NBANC_TX_NAT_COMP_AGIFI_TENPO_NUM_MONT",
+                "descripcionCorta": "Tenpo",
+                "observaciones": [{"fecha": 20260201, "valor": 2500.0}],
+            }
+        ]
+    }
+
+    observations = parse_operation_payload(
+        payload,
+        customer_type="Natural Person",
+        operation_type="Purchases",
+        dataset_code=PREPAID_CARD_OPS_NATURAL_PERSON_PURCHASES_DATASET,
+    )
+
+    assert len(observations) == 1
+    assert observations[0].period_month == date(2026, 2, 1)
+    assert observations[0].value == Decimal("2500.0")
+
+
 def test_parse_card_count_payload_and_merge_rows():
     counts = parse_card_count_payload(
         _payload(
