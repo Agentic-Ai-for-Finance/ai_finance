@@ -26,7 +26,7 @@ export function operationFromSlug(slug: string): OperationName | null {
 }
 
 export const primarySections = [
-  { slug: "credit-cards", label: "Credit Cards", href: "/credit-cards/purchases?view=volume" },
+  { slug: "credit-cards", label: "Credit Cards", href: "/credit-cards" },
   { slug: "debit-cards", label: "Debit Cards", href: "/debit-cards" },
   { slug: "prepaid-cards", label: "Prepaid Cards", href: "/prepaid-cards" },
   { slug: "checking-accounts", label: "Checking Accounts", href: "/checking-accounts" },

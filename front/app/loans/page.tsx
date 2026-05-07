@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/app-shell";
-import { PlaceholderPanel } from "@/components/placeholder-panel";
 
 type LoansPageProps = {
   searchParams: Promise<{
@@ -12,12 +11,13 @@ type LoansPageProps = {
 
 export default async function LoansPage({ searchParams }: LoansPageProps) {
   const { view, start, end, uf } = await searchParams;
+
   return (
     <AppShell section="loans" queryParams={{ view, start, end, uf }}>
-      <PlaceholderPanel
-        title="Loans"
-        description="This section is reserved for a later phase and has no data integration in v1."
-      />
+      <section className="rounded-3xl border border-border bg-panel p-8">
+        <h1 className="text-3xl font-semibold text-white">Loans</h1>
+        <p className="mt-4 text-lg italic text-muted">Soon</p>
+      </section>
     </AppShell>
   );
 }

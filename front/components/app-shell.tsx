@@ -4,7 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { CreditCardSidebar } from "@/components/credit-card-sidebar";
 import { PrepaidCardSidebar } from "@/components/prepaid-card-sidebar";
-import { primarySections } from "@/lib/credit-card-config";
+import {
+  creditCardOperations,
+  defaultOperationsRateViewKey,
+  defaultViewKey,
+  primarySections,
+} from "@/lib/credit-card-config";
+import {
+  debitCardOperations,
+  defaultDebitOperationsRateViewKey,
+  defaultDebitViewKey,
+} from "@/lib/debit-card-config";
+import {
+  checkingAccountOperations,
+  defaultCheckingAccountViewKey,
+} from "@/lib/checking-account-config";
+import {
+  defaultPrepaidOperationsRateViewKey,
+  defaultPrepaidViewKey,
+  prepaidCardOperations,
+  prepaidCustomerTypes,
+} from "@/lib/prepaid-card-config";
 import { cn } from "@/lib/utils";
 
 type AppShellProps = {
@@ -27,6 +47,48 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
     });
     const mergedQuery = params.toString();
     return mergedQuery ? `${basePath}?${mergedQuery}` : basePath;
+  };
+
+  const categoryDropdownItems = (slug: AppShellProps["section"]) => {
+    if (slug === "credit-cards") {
+      return creditCardOperations.map((item) => ({
+        label: item.label,
+        href: mergedHref(
+          `/credit-cards/${item.slug}?view=${item.slug === "total-activation-rate" ? defaultOperationsRateViewKey : defaultViewKey}`
+        ),
+      }));
+    }
+
+    if (slug === "debit-cards") {
+      return debitCardOperations.map((item) => ({
+        label: item.label,
+        href: mergedHref(
+          `/debit-cards/${item.slug}?view=${item.slug === "total-activation-rate" ? defaultDebitOperationsRateViewKey : defaultDebitViewKey}`
+        ),
+      }));
+    }
+
+    if (slug === "checking-accounts") {
+      return checkingAccountOperations.map((item) => ({
+        label: item.label,
+        href: mergedHref(`/checking-accounts/${item.slug}?view=${defaultCheckingAccountViewKey}`),
+      }));
+    }
+
+    if (slug === "prepaid-cards") {
+      return prepaidCustomerTypes.flatMap((customerType) =>
+        prepaidCardOperations.map((operation) => ({
+          label: `${customerType.label}: ${operation.label}`,
+          href: mergedHref(
+            `/prepaid-cards/${customerType.slug}/${operation.slug}?view=${
+              operation.slug === "total-activation-rate" ? defaultPrepaidOperationsRateViewKey : defaultPrepaidViewKey
+            }`
+          ),
+        }))
+      );
+    }
+
+    return [];
   };
 
   return (
@@ -82,18 +144,35 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
           <nav className="flex flex-wrap items-center justify-center gap-7">
             {primarySections.map((item) => {
               const isActive = section === item.slug;
+              const dropdownItems = categoryDropdownItems(item.slug);
 
               return (
-                <Link
-                  key={item.slug}
-                  href={mergedHref(item.href)}
-                  className={cn(
-                    "border-b-2 pb-0.5 text-[11px] font-medium uppercase tracking-[0.28em] transition",
-                    isActive ? "border-brand text-slate-950" : "border-transparent text-slate-500 hover:text-slate-950"
-                  )}
-                >
-                  {item.label}
-                </Link>
+                <div key={item.slug} className="group relative">
+                  <Link
+                    href={mergedHref(item.href)}
+                    className={cn(
+                      "border-b-2 pb-0.5 text-[11px] font-medium uppercase tracking-[0.28em] transition",
+                      isActive ? "border-brand text-slate-950" : "border-transparent text-slate-500 hover:text-slate-950"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                  {dropdownItems.length > 0 ? (
+                    <div className="pointer-events-none absolute left-1/2 top-full z-40 hidden w-72 -translate-x-1/2 pt-3 group-hover:block">
+                      <div className="pointer-events-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                        {dropdownItems.map((dropdownItem) => (
+                          <Link
+                            key={dropdownItem.href}
+                            href={dropdownItem.href}
+                            className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
+                          >
+                            {dropdownItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               );
             })}
           </nav>

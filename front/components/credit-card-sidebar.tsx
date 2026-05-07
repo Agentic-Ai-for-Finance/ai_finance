@@ -427,11 +427,7 @@ export function CreditCardSidebar({
             </div>
           </div>
         </div>
-      ) : (
-        <div className="max-w-[18rem] text-sm leading-6 text-slate-700">
-          Only the Credit Cards section is connected in v1. This route remains part of the shared shell.
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
