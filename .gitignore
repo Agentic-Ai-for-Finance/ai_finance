@@ -30,6 +30,7 @@ plans/
 mappings/
 screenshots/
 endpoints-mapping.txt
+descriptions/
 
 #MCPs
 .playwright-mcp/
