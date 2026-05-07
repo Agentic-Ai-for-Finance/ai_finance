@@ -483,6 +483,36 @@ Frontend data access:
   - debit dashboard routes are fully wired (no placeholders)
   - market-share and growth table behavior follows current rules above
 
+# Session Handoff (Prepaid Rollout)
+
+- Rollout status:
+  - Phase 0 plan scaffold: complete (`35e35e4`)
+  - Phase 1 SQL migration/contracts: complete (`de3fa55`)
+  - Phase 2 backend models/transforms/loaders: complete (`57389f4`)
+  - Phase 3 source/worker/entrypoint: complete (`57389f4`)
+  - Phase 4 frontend config/query layer: complete (`e996d0d`)
+  - Phase 5 frontend routes/sidebar/dashboard: complete (`e996d0d`)
+  - Post-deploy worker fixes:
+    - empty source-month handling fix (`87a3556`)
+    - CMF `observaciones` payload shape support (`f54ed6e`)
+- Database migration status:
+  - `db/017_prepaid_card_metrics.sql` applied to Supabase project `vqvlzfctbvqpouctestu` via MCP migration `017_prepaid_card_metrics`.
+- Railway deployment:
+  - prepaid worker command: `uv run data/prepaid_card_ops.py`
+  - worker env var workaround remains required: `MISE_AQUA_GITHUB_ATTESTATIONS=false`
+  - watch paths:
+    - `data/prepaid_card_ops.py`
+    - `data/workers/prepaid_card_ops_worker.py`
+    - `data/sources/prepaid_card_operations.py`
+    - `data/transforms/prepaid_card_ops.py`
+    - `data/loaders/prepaid_card_ops_loader.py`
+    - `data/models/prepaid_card_operations.py`
+    - `data/loaders/bank_credit_card_ops_sync_state_loader.py`
+    - `db/017_prepaid_card_metrics.sql`
+- Initial post-migration verification:
+  - `public.cmf_datasets`: 16 prepaid dataset rows, all with `start_date = 2009-04-01`.
+  - `public.prepaid_card_ops_metrics` and `public.prepaid_card_operation_metrics` views exist.
+
 # Session Handoff (Checking Accounts Rollout)
 
 - Baseline branch/commit for verification: `accounts_feature` at `0ff212c`.
