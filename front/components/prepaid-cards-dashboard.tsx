@@ -914,17 +914,12 @@ function aggregateOperationsRateRows(rows: PrepaidOperationMetricRow[]): Prepaid
     }
 
     const totalActiveCards = Number(existing.total_active_cards) + Number(row.total_active_cards);
-    const activeCardsPrimary = Number(existing.active_cards_primary) + Number(row.active_cards_primary);
-    const activeCardsSupplementary =
-      Number(existing.active_cards_supplementary) + Number(row.active_cards_supplementary);
     const totalCardsWithOperations =
       Number(existing.total_cards_with_operations) + Number(row.total_cards_with_operations);
 
     grouped.set(key, {
       ...existing,
       total_active_cards: String(totalActiveCards),
-      active_cards_primary: String(activeCardsPrimary),
-      active_cards_supplementary: String(activeCardsSupplementary),
       total_cards_with_operations: String(totalCardsWithOperations),
       operations_rate: totalActiveCards > 0 ? String(totalCardsWithOperations / totalActiveCards) : null,
     });
@@ -946,11 +941,6 @@ function getOperationsRateMetricValue(
   if (viewKey === "total-activation-rate") {
     return row.operations_rate === null ? null : Number(row.operations_rate) * 100;
   }
-  if (viewKey === "supplementary-rate") {
-    const primaryCards = Number(row.active_cards_primary);
-    return primaryCards > 0 ? (Number(row.active_cards_supplementary) / primaryCards) * 100 : null;
-  }
-
   return null;
 }
 
@@ -1092,15 +1082,11 @@ function calculateOperationsRateSystemValue(rows: PrepaidOperationMetricRow[], v
   const totals = rows.reduce(
     (accumulator, row) => {
       accumulator.totalActiveCards += Number(row.total_active_cards);
-      accumulator.activeCardsPrimary += Number(row.active_cards_primary);
-      accumulator.activeCardsSupplementary += Number(row.active_cards_supplementary);
       accumulator.totalCardsWithOperations += Number(row.total_cards_with_operations);
       return accumulator;
     },
     {
       totalActiveCards: 0,
-      activeCardsPrimary: 0,
-      activeCardsSupplementary: 0,
       totalCardsWithOperations: 0,
     }
   );
@@ -1113,11 +1099,6 @@ function calculateOperationsRateSystemValue(rows: PrepaidOperationMetricRow[], v
   }
   if (viewKey === "total-activation-rate") {
     return totals.totalActiveCards > 0 ? (totals.totalCardsWithOperations / totals.totalActiveCards) * 100 : null;
-  }
-  if (viewKey === "supplementary-rate") {
-    return totals.activeCardsPrimary > 0
-      ? (totals.activeCardsSupplementary / totals.activeCardsPrimary) * 100
-      : null;
   }
 
   return null;
