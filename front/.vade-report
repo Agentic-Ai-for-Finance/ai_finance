@@ -1,0 +1,48 @@
+## Vercel Web Analytics Installation
+
+Successfully installed and configured Vercel Web Analytics for this Next.js project.
+
+### Changes Made:
+
+#### 1. Package Installation
+- **Added dependency**: `@vercel/analytics` (version 2.0.1)
+- **Modified files**: 
+  - `package.json` - Added @vercel/analytics to dependencies
+  - `package-lock.json` - Updated with new package and its dependencies (368 packages added)
+
+#### 2. Analytics Configuration
+- **Modified file**: `app/layout.tsx`
+- **Changes**:
+  - Imported the Analytics component from `@vercel/analytics/next`
+  - Added `<Analytics />` component inside the `<body>` tag of the RootLayout
+  
+### Implementation Details:
+
+This project uses **Next.js with the App Router**, so I followed the framework-specific instructions from the official Vercel documentation:
+
+1. Installed the `@vercel/analytics` package using npm
+2. Imported `Analytics` from `@vercel/analytics/next` in the root layout
+3. Added the `<Analytics />` component at the end of the body element
+
+The Analytics component is now properly configured to track page views and web vitals when deployed to Vercel.
+
+### Testing:
+
+- ✅ Build completed successfully (`npm run build`)
+- ✅ No TypeScript errors
+- ✅ Static and dynamic routes generated correctly
+- ✅ All dependencies installed successfully
+
+### Next Steps:
+
+Once deployed to Vercel, the analytics will automatically start tracking:
+- Page views
+- Web Vitals (FCP, LCP, CLS, FID, TTFB)
+- Custom events (if configured)
+
+Users can view analytics data in the Vercel dashboard under the Analytics tab for this project.
+
+### Files Modified:
+- `front/app/layout.tsx` - Added Analytics component
+- `front/package.json` - Added @vercel/analytics dependency
+- `front/package-lock.json` - Updated lockfile with new dependencies
