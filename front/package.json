@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.39.3",
     "@supabase/supabase-js": "^2.49.8",
     "@vercel/analytics": "^2.0.1",
     "dotenv": "^16.4.7",

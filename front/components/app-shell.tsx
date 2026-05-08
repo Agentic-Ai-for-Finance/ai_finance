@@ -5,6 +5,12 @@ import Link from "next/link";
 import { CreditCardSidebar } from "@/components/credit-card-sidebar";
 import { PrepaidCardSidebar } from "@/components/prepaid-card-sidebar";
 import {
+  OptionalSignInButton,
+  OptionalSignedIn,
+  OptionalSignedOut,
+  OptionalUserButton,
+} from "@/lib/clerk-compat";
+import {
   creditCardOperations,
   defaultOperationsRateViewKey,
   defaultViewKey,
@@ -106,12 +112,19 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
             >
               Menu
             </button>
-            <button
-              type="button"
-              className="rounded-sm border border-slate-950 bg-slate-950 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-brand hover:text-white"
-            >
-              Login
-            </button>
+            <OptionalSignedOut>
+              <OptionalSignInButton>
+                <button
+                  type="button"
+                  className="rounded-sm border border-slate-950 bg-slate-950 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-brand hover:text-white"
+                >
+                  Login
+                </button>
+              </OptionalSignInButton>
+            </OptionalSignedOut>
+            <OptionalSignedIn>
+              <OptionalUserButton afterSignOutUrl="/credit-cards" />
+            </OptionalSignedIn>
           </div>
         </div>
 
@@ -178,12 +191,19 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
           </nav>
 
           <div className="justify-self-end">
-            <button
-              type="button"
-              className="rounded-sm border border-slate-950 bg-slate-950 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-brand hover:text-white"
-            >
-              Login
-            </button>
+            <OptionalSignedOut>
+              <OptionalSignInButton>
+                <button
+                  type="button"
+                  className="rounded-sm border border-slate-950 bg-slate-950 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-brand hover:text-white"
+                >
+                  Login
+                </button>
+              </OptionalSignInButton>
+            </OptionalSignedOut>
+            <OptionalSignedIn>
+              <OptionalUserButton afterSignOutUrl="/credit-cards" />
+            </OptionalSignedIn>
           </div>
         </div>
       </header>

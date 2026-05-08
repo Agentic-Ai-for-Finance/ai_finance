@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BankSelector } from "@/components/bank-selector";
-import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard-states";
+import { EmptyState, ErrorState, LoadingState, LockedMetricState } from "@/components/dashboard-states";
 import { MetricLineChart } from "@/components/metric-line-chart";
+import { useOptionalAuth } from "@/lib/clerk-compat";
 import {
   getBankDisplayName,
   getCanonicalInstitution,
@@ -31,6 +32,7 @@ import {
   type DebitOperationName,
   type DebitOperationMetricsViewKey,
 } from "@/lib/debit-card-config";
+import { requiresProtectedDebitMetric } from "@/lib/dashboard-access";
 import {
   addMonths,
   buildMonthOptions,
@@ -44,6 +46,7 @@ import {
   normalizeMonthValue,
   parseMonthValue,
 } from "@/lib/formatters";
+import { useSavedBankPreferences } from "@/lib/user-bank-preferences";
 import { cn } from "@/lib/utils";
 
 type DebitCardsDashboardProps = {
@@ -77,6 +80,7 @@ export function DebitCardsDashboard({
   endMonthParam,
   ufParam,
 }: DebitCardsDashboardProps) {
+  const { isSignedIn } = useOptionalAuth();
   const isOperationsRateDashboard = isDebitOperationsRateOperation(operation);
   const initialMetricKey = isOperationsRateDashboard
     ? isDebitOperationsRateViewKey(initialView)
@@ -95,6 +99,9 @@ export function DebitCardsDashboard({
   const [isLoadingRows, setIsLoadingRows] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasSeededSelectionRef = useRef(false);
+  const { defaultInstitutionCodes } = useSavedBankPreferences("debit-cards");
+  const requiresProtectedMetric = requiresProtectedDebitMetric(operation, viewKey);
+  const isMetricLocked = requiresProtectedMetric && !isSignedIn;
 
   useEffect(() => {
     setViewKey(
@@ -202,12 +209,21 @@ export function DebitCardsDashboard({
     let isCancelled = false;
 
     async function loadRows() {
+      if (isMetricLocked) {
+        setOperationRows([]);
+        setOperationsRateRows([]);
+        setIsLoadingRows(false);
+        setErrorMessage(null);
+        return;
+      }
+
       setIsLoadingRows(true);
       setErrorMessage(null);
+      const access = requiresProtectedMetric ? "protected" : "public";
 
       try {
         if (isOperationsRateDashboard) {
-          const nextRows = await fetchDebitOperationMetrics(`${startMonth}-01`, `${endMonth}-01`);
+          const nextRows = await fetchDebitOperationMetrics(`${startMonth}-01`, `${endMonth}-01`, access);
 
           if (!nextRows.length) {
             throw new Error("The selected time range returned no rows.");
@@ -220,7 +236,7 @@ export function DebitCardsDashboard({
           return;
         }
 
-        const nextRows = await fetchDebitCardMetrics(operation, `${startMonth}-01`, `${endMonth}-01`);
+        const nextRows = await fetchDebitCardMetrics(operation, `${startMonth}-01`, `${endMonth}-01`, access);
 
         if (!nextRows.length) {
           throw new Error("The selected time range returned no rows.");
@@ -248,7 +264,7 @@ export function DebitCardsDashboard({
     return () => {
       isCancelled = true;
     };
-  }, [endMonth, isOperationsRateDashboard, operation, startMonth]);
+  }, [endMonth, isMetricLocked, isOperationsRateDashboard, operation, requiresProtectedMetric, startMonth]);
 
   const activeUfValue = useMemo(() => {
     const parsed = Number(ufParam ?? "");
@@ -360,8 +376,13 @@ export function DebitCardsDashboard({
   ]);
 
   const defaultSelectedBanks = useMemo(
-    () => computeDefaultSelectedBanks(bankSeries, latestLoadedMonth),
-    [bankSeries, latestLoadedMonth]
+    () =>
+      defaultInstitutionCodes.length
+        ? bankSeries
+            .filter((bank) => defaultInstitutionCodes.includes(bank.institutionCode))
+            .map((bank) => bank.institutionCode)
+        : computeDefaultSelectedBanks(bankSeries, latestLoadedMonth),
+    [bankSeries, defaultInstitutionCodes, latestLoadedMonth]
   );
 
   useEffect(() => {
@@ -435,7 +456,7 @@ export function DebitCardsDashboard({
           return accumulator;
         }
 
-        accumulator.volume += Number((row as DebitCardMetricRow).real_value_uf) * activeUfValue;
+        accumulator.volume += Number((row as DebitCardMetricRow).real_value_uf ?? 0) * activeUfValue;
         accumulator.transactions += Number((row as DebitCardMetricRow).transaction_count);
         return accumulator;
       },
@@ -476,7 +497,7 @@ export function DebitCardsDashboard({
         const shareEnd = supportsMarketShare
           ? calculateMarketShares(
               viewKey === "volume"
-                ? Number((row as DebitCardMetricRow).real_value_uf) * activeUfValue
+                ? Number((row as DebitCardMetricRow).real_value_uf ?? 0) * activeUfValue
                 : Number((row as DebitCardMetricRow).transaction_count),
               viewKey === "volume" ? totals.volume : totals.transactions
             )
@@ -736,7 +757,9 @@ export function DebitCardsDashboard({
             </div>
           </div>
 
-          {isLoadingRows ? (
+          {isMetricLocked ? (
+            <LockedMetricState compact description={`Login to unlock ${activeMetric.label.toLowerCase()} for ${debitOperationLabelMap[operation]}.`} />
+          ) : isLoadingRows ? (
             <LoadingState label="Loading time series" compact />
           ) : selectedSeries.length ? (
             <MetricLineChart
@@ -766,6 +789,14 @@ export function DebitCardsDashboard({
         />
 
         <div className="border-t border-border pt-8">
+          {isMetricLocked ? (
+            <LockedMetricState
+              compact
+              title={`${activeMetric.label} stays locked while logged out`}
+              description="The metric pill remains visible, but the data table unlocks only after sign-in."
+            />
+          ) : (
+            <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
               <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
@@ -826,6 +857,8 @@ export function DebitCardsDashboard({
               </tbody>
             </table>
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -843,13 +876,13 @@ function getOperationMetricValue(
   activeUfValue: number
 ): number | null {
   if (viewKey === "volume") {
-    return Number(row.real_value_uf) * activeUfValue;
+    return row.real_value_uf ? Number(row.real_value_uf) * activeUfValue : null;
   }
   if (viewKey === "transactions") {
     return Number(row.transaction_count);
   }
   if (viewKey === "average-ticket") {
-    return Number(row.average_ticket_uf) * activeUfValue;
+    return row.average_ticket_uf ? Number(row.average_ticket_uf) * activeUfValue : null;
   }
   if (viewKey === "operations-per-active-card") {
     return row.operations_per_active_card === null ? null : Number(row.operations_per_active_card);
@@ -877,8 +910,8 @@ function aggregateOperationRows(rows: DebitCardMetricRow[]): DebitCardMetricRow[
     }
 
     const currentTransactions = Number(existing.transaction_count) + Number(row.transaction_count);
-    const currentNominal = Number(existing.nominal_volume_millions_clp) + Number(row.nominal_volume_millions_clp);
-    const currentRealUf = Number(existing.real_value_uf) + Number(row.real_value_uf);
+    const currentNominal = Number(existing.nominal_volume_millions_clp ?? 0) + Number(row.nominal_volume_millions_clp ?? 0);
+    const currentRealUf = Number(existing.real_value_uf ?? 0) + Number(row.real_value_uf ?? 0);
     const currentActiveCards = Number(existing.total_active_cards ?? 0) + Number(row.total_active_cards ?? 0);
 
     grouped.set(key, {
@@ -1066,7 +1099,7 @@ function calculateSystemAverage(rows: Array<DebitCardMetricRow | DebitOperationM
         return accumulator;
       }
 
-      accumulator.volume += Number(row.real_value_uf) * activeUfValue;
+      accumulator.volume += Number(row.real_value_uf ?? 0) * activeUfValue;
       accumulator.transactions += Number(row.transaction_count);
       return accumulator;
     },

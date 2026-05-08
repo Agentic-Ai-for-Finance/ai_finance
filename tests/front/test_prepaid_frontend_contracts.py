@@ -19,13 +19,12 @@ def test_prepaid_card_config_exposes_worlds_routes_and_supported_views():
     assert 'key: "supplementary-rate"' not in src
 
 
-def test_prepaid_supabase_queries_target_prepaid_views():
+def test_prepaid_queries_use_api_proxy_routes():
     src = Path("front/lib/supabase-prepaid-queries.ts").read_text()
 
-    assert 'from("prepaid_card_ops_metrics")' in src
-    assert 'from("prepaid_card_operation_metrics")' in src
-    assert '.eq("customer_type", customerType)' in src
-    assert "METRICS_PAGE_SIZE = 1000" in src
+    assert "/api/v1/public/metrics?dataset=prepaid-card-ops" in src
+    assert "/api/v1/public/metrics?dataset=prepaid-card-activation" in src
+    assert '"/api/v1/protected/metrics"' in src
 
 
 def test_prepaid_routes_and_shell_wiring_exist():
@@ -35,7 +34,8 @@ def test_prepaid_routes_and_shell_wiring_exist():
     sidebar_src = Path("front/components/prepaid-card-sidebar.tsx").read_text()
     nav_src = Path("front/lib/credit-card-config.ts").read_text()
 
-    assert "/prepaid-cards/natural-person/purchases" in page_src
+    assert 'section="prepaid-cards"' in page_src
+    assert "Natural Person: Purchases" in page_src
     assert "customerTypeFromSlug" in dynamic_src
     assert "PrepaidCardsDashboard" in dynamic_src
     assert "PrepaidCardSidebar" in shell_src
