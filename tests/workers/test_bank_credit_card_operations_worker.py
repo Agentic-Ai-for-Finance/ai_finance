@@ -370,6 +370,67 @@ def test_load_active_operation_configs_reads_registry_rows():
     ]
 
 
+def test_load_active_operation_configs_ignores_non_credit_operations():
+    sb = FakeSupabase(
+        datasets=[
+            {
+                "operation_type": "Compras",
+                "dataset_code": BANK_CREDIT_CARD_OPS_COMPRAS_TRANSACTION_COUNT_DATASET,
+                "measure_kind": CMF_MEASURE_KIND_TRANSACTION_COUNT,
+                "source_tag": "count-tag",
+                "source_nombre": "Compras",
+                "source_description": "Compras desc",
+                "source_endpoint_base": "https://cmf.example",
+                "refresh_frequency": "monthly",
+                "start_date": "2009-04-01",
+                "is_active": True,
+            },
+            {
+                "operation_type": "Compras",
+                "dataset_code": BANK_CREDIT_CARD_OPS_COMPRAS_NOMINAL_VOLUME_DATASET,
+                "measure_kind": CMF_MEASURE_KIND_NOMINAL_VOLUME,
+                "source_tag": "volume-tag",
+                "source_nombre": "Compras",
+                "source_description": "Compras desc",
+                "source_endpoint_base": "https://cmf.example",
+                "refresh_frequency": "monthly",
+                "start_date": "2009-04-01",
+                "is_active": True,
+            },
+            {
+                "operation_type": "Debit Transactions",
+                "dataset_code": "bank_debit_card_ops_debit_transactions_transaction_count",
+                "measure_kind": CMF_MEASURE_KIND_TRANSACTION_COUNT,
+                "source_tag": "debit-count-tag",
+                "source_nombre": "Debit Transactions",
+                "source_description": "Debit Transactions desc",
+                "source_endpoint_base": "https://cmf.example",
+                "refresh_frequency": "monthly",
+                "start_date": "2009-04-01",
+                "is_active": True,
+            },
+            {
+                "operation_type": "Debit Transactions",
+                "dataset_code": "bank_debit_card_ops_debit_transactions_nominal_volume",
+                "measure_kind": CMF_MEASURE_KIND_NOMINAL_VOLUME,
+                "source_tag": "debit-volume-tag",
+                "source_nombre": "Debit Transactions",
+                "source_description": "Debit Transactions desc",
+                "source_endpoint_base": "https://cmf.example",
+                "refresh_frequency": "monthly",
+                "start_date": "2009-04-01",
+                "is_active": True,
+            },
+        ]
+    )
+
+    configs = load_active_operation_configs(sb)
+
+    assert [config.dataset_code for config in configs] == [
+        BANK_CREDIT_CARD_OPS_COMPRAS_DATASET
+    ]
+
+
 def test_load_active_card_counts_config_reads_registry_rows():
     sb = FakeSupabase(
         datasets=[
