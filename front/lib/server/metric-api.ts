@@ -51,7 +51,7 @@ const DATASET_CONFIG: Record<Exclude<DatasetName, "uf-latest">, DatasetConfig> =
   "credit-card-ops": {
     table: "bank_credit_card_ops_metrics",
     publicSelect:
-      "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,source_dataset_code,updated_at",
+      "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,real_value_uf,source_dataset_code,updated_at",
     protectedSelect:
       "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,nominal_volume_millions_clp,uf_date_used,uf_value_used,real_value_uf,average_ticket_uf,total_active_cards,operations_per_active_card,source_dataset_code,updated_at",
     applyFilters: (query, params) => query.eq("operation_type", params.operation),
@@ -67,7 +67,7 @@ const DATASET_CONFIG: Record<Exclude<DatasetName, "uf-latest">, DatasetConfig> =
   "debit-card-ops": {
     table: "bank_debit_card_ops_metrics",
     publicSelect:
-      "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,source_dataset_code,updated_at",
+      "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,real_value_uf,source_dataset_code,updated_at",
     protectedSelect:
       "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,nominal_volume_millions_clp,uf_date_used,uf_value_used,real_value_uf,average_ticket_uf,total_active_cards,operations_per_active_card,source_dataset_code,updated_at",
     applyFilters: (query, params) => query.eq("operation_type", params.operation),
@@ -83,7 +83,7 @@ const DATASET_CONFIG: Record<Exclude<DatasetName, "uf-latest">, DatasetConfig> =
   "prepaid-card-ops": {
     table: "prepaid_card_ops_metrics",
     publicSelect:
-      "customer_type,operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,source_dataset_code,updated_at",
+      "customer_type,operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,real_value_uf,source_dataset_code,updated_at",
     protectedSelect:
       "customer_type,operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,nominal_volume_millions_clp,uf_date_used,uf_value_used,real_value_uf,average_ticket_uf,total_active_cards,operations_per_active_card,source_dataset_code,updated_at",
     applyFilters: (query, params) => query.eq("customer_type", params.customerType).eq("operation_type", params.operation),
@@ -99,7 +99,7 @@ const DATASET_CONFIG: Record<Exclude<DatasetName, "uf-latest">, DatasetConfig> =
   "checking-accounts": {
     table: "checking_accounts_metrics",
     publicSelect:
-      "account_type,dataset_code,institution_code,institution_name,period_month,account_count,source_dataset_code,updated_at",
+      "account_type,dataset_code,institution_code,institution_name,period_month,account_count,real_balance_uf,source_dataset_code,updated_at",
     protectedSelect:
       "account_type,dataset_code,institution_code,institution_name,period_month,account_count,nominal_balance_millions_clp,uf_date_used,uf_value_used,real_balance_uf,average_balance_uf,source_dataset_code,updated_at",
     applyFilters: (query, params) => query.eq("account_type", params.operation),
