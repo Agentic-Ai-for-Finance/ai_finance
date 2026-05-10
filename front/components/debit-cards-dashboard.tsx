@@ -1069,7 +1069,7 @@ function MetricTabButton({
             )}
           >
             <span className="block text-sm font-semibold text-white">{label}</span>
-            <span className="mt-1 block">{description}</span>
+            <span className="mt-1 block">{disabled ? "Must login to see this data" : description}</span>
             {unitLabel ? <span className="mt-1 block text-xs italic text-brand">{unitLabel}</span> : null}
           </span>
         </span>
