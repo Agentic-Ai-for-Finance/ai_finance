@@ -1054,7 +1054,8 @@ function MetricTabButton({
           </span>
           <span
             className={cn(
-              "pointer-events-none absolute bottom-full z-30 mb-2 hidden w-80 max-w-[90vw] whitespace-normal break-words rounded-2xl border border-border bg-[#07101c] p-3 text-left text-xs leading-5 text-muted shadow-2xl group-hover/info:block group-focus-visible/info:block",
+              "pointer-events-none absolute bottom-full z-30 mb-2 hidden w-80 max-w-[90vw] whitespace-normal break-words rounded-2xl border border-border bg-[#07101c] p-3 text-left text-xs leading-5 text-muted shadow-2xl",
+              disabled ? "group-hover/tab:block group-focus-visible/tab:block" : "group-hover/info:block group-focus-visible/info:block",
               tooltipAlign === "right" ? "right-0" : "left-1/2 -translate-x-1/2"
             )}
           >
