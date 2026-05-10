@@ -9,6 +9,16 @@ This repo has five active ETL subsystems and one active frontend demo:
 - unified prepaid-card operations ingestion, split by natural person and business
 - `front/` Next.js demo shell
 
+# Startup Context (Read First)
+
+- At the start of each session, read `plans/features_rollout.txt` first.
+- Treat `plans/features_rollout.txt` as the active source of truth for:
+  - current feature phase
+  - rollout ordering
+  - cross-feature dependencies
+  - high-level done criteria
+- If there is any conflict between ad-hoc notes and rollout sequencing, follow `plans/features_rollout.txt` unless explicitly overridden in-session.
+
 # Runtime
 
 - Python is managed with `uv`.
@@ -302,11 +312,12 @@ Active migration set:
 - Install with `npm install` in `front/`.
 - Run with `npm run dev` in `front/`.
 - Validate with `npm run build` in `front/`.
-- Future auth is expected, and Clerk is the likely provider, but auth is not approved yet.
-- Do not add Clerk config, auth middleware, protected routes, user/session models, or auth tables until an auth phase is explicitly approved.
-- When auth work is approved, do a Layer 2 security pass (Auth Surfaces + RLS):
-  - enumerate every API route/endpoint and confirm each is gated by auth + authorization (role/permissions) with middleware matcher coverage
-  - ensure Supabase RLS is enabled for any user data and policies check `auth.uid()` (or equivalent) rather than relying on UI-only hiding
+- Auth Phase 1 is now approved.
+- Clerk is the active Phase 1 auth provider.
+- Supabase Auth remains the fallback if Clerk is not viable by the documented checkpoint.
+- Continue the Layer 2 security pass (Auth Surfaces + RLS):
+  - enumerate every API route/endpoint and confirm each is gated by auth + authorization with middleware matcher coverage where required
+  - ensure Supabase RLS is enabled for user-owned app data and policies bind identity at the database layer
   - verify no route is only "hidden" in the frontend while still publicly callable
 
 # Frontend Product Rules
@@ -458,18 +469,11 @@ Formatting and metric rules:
 
 Frontend data access:
 
-- Browser reads use the Supabase anon/public key.
-- Frontend reads:
-  - `public.bank_credit_card_ops_metrics`
-  - `public.bank_credit_card_operations_rate_metrics`
-  - `public.bank_debit_card_ops_metrics`
-  - `public.bank_debit_card_operation_metrics`
-  - `public.prepaid_card_ops_metrics`
-  - `public.prepaid_card_operation_metrics`
-  - `public.checking_accounts_metrics`
-  - `public.uf_values`
-- The browser path is public read-only; there is no login in v1.
-- Frontend must auto-paginate Supabase reads for larger date ranges and must not treat missing rows as zero values.
+- Public dashboard reads should now default to backend API proxy routes, not browser-direct Supabase reads.
+- Public browser-visible data is limited to approved nominal/base metrics only.
+- Protected derived metrics must route through authenticated backend APIs.
+- A direct browser-to-Supabase path may exist only as a manual emergency fallback for explicitly public endpoints.
+- Frontend must still auto-paginate larger date ranges through the API layer and must not treat missing rows as zero values.
 
 # Session Handoff (Debit Rollout)
 
@@ -577,3 +581,81 @@ Frontend data access:
     - `/checking-accounts`
   - fixed Prepaid landing-page navigation so repeated clicks do not re-inject `view/start/end/uf` into `/prepaid-cards`.
   - dashboard operation routes still preserve query params for shareable analysis state.
+
+# Session Handoff (Features Rollout)
+
+- Date: 2026-05-08.
+- Canonical rollout plan file: `plans/features_rollout.txt`.
+- Ordered phases:
+  - Phase 0: Product and security decisions
+  - Phase 1: Backend security foundation
+  - Phase 2: Home page
+  - Phase 3: Prompt bar (website analysis assistant)
+  - Phase 4: Compare cards page
+  - Phase 5: WhatsApp analysis agent
+  - Phase 6: Hardening and launch readiness
+- Current standing:
+  - Plan created and accepted.
+  - Execution should start from Phase 0 and Phase 1 before shipping new data-heavy UX.
+
+# Session Handoff (Phase 0 Lock + Phase 1 Foundation)
+
+- Date: 2026-05-08.
+- Planning lock committed:
+  - `43e736a` `docs: lock phase 0 security decisions and phase 1 kickoff`
+- Implementation foundation committed:
+  - `87c3374` `feat: add phase 1 auth and metrics access foundation`
+- Phase 0 status:
+  - locked and approved in `plans/phases/phase0/phase0_decisions.md`
+  - backlog synced in `plans/phases/phase0/phase0_backlog.md`
+- Locked Phase 1 policy:
+  - roles are only `user` and `admin`
+  - Clerk is active provider; Supabase Auth is fallback
+  - public data is nominal/base only
+  - UF-adjusted and other derived analytics are protected
+  - metric pills remain visible while protected logged-out data stays locked
+  - public dashboard path should default to backend API proxy routes
+  - protected analysis is read-only and bounded
+- Implemented in `front/`:
+  - Clerk auth foundation with compatibility wrapper for missing local Clerk env
+  - route middleware for protected API groups
+  - API routes for:
+    - `/api/v1/public/metrics`
+    - `/api/v1/protected/metrics`
+    - `/api/v1/auth/session`
+    - `/api/v1/preferences/banks`
+    - `/api/v1/analysis/query`
+    - `/api/v1/compare/query`
+    - `/api/v1/admin/audit`
+  - dashboard query modules migrated from browser-direct Supabase access to backend API access
+  - locked-state UI for protected derived metrics across credit, debit, prepaid, and checking dashboards
+  - signed-in default bank preference hook
+- Database foundation added:
+  - `db/018_phase1_security_foundation.sql`
+  - adds `public.app_user_profiles`
+  - adds `public.app_audit_logs`
+  - enables RLS on user-owned app data foundation
+- Verification completed on repo state at handoff:
+  - `npm run build` in `front/` passed
+  - targeted contract tests passed:
+    - `tests/front/test_debit_frontend_contracts.py`
+    - `tests/front/test_prepaid_frontend_contracts.py`
+    - `tests/front/test_checking_accounts_frontend_contracts.py`
+    - `tests/front/test_phase1_security_frontend_contracts.py`
+    - `tests/db/test_phase1_security_sql.py`
+- Follow-up status update (2026-05-10, development environment):
+  - `db/019_phase1_grant_hardening.sql` applied to Supabase project `hnuvihnvabfryedfchdb` via MCP migration `019_phase1_grant_hardening`.
+  - `db/020_phase1_profile_audit_least_privilege.sql` applied to Supabase project `hnuvihnvabfryedfchdb` via MCP migration `020_phase1_profile_audit_least_privilege`.
+  - auth env verification in local `.env`:
+    - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: set
+    - `CLERK_SECRET_KEY`: set
+    - `ADMIN_EMAIL_ALLOWLIST`: set
+  - targeted security verification passed after the above updates:
+    - `uv run pytest -q tests/front/test_phase1_security_frontend_contracts.py tests/db/test_phase1_security_sql.py`
+    - `npm run build` in `front/`
+- Avoid unrelated local files unless explicitly requested:
+  - `AGENTS.md`
+  - `.DS_Store`
+  - `front/prototypes/`
+  - repo-root `package.json`
+  - repo-root `package-lock.json`
