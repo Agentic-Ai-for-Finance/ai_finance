@@ -1,6 +1,31 @@
 from pathlib import Path
 
 
+def test_phase1_api_route_classification_and_middleware_coverage():
+    api_files = sorted(Path("front/app/api/v1").rglob("route.ts"))
+    route_paths = [
+        "/" + str(path.relative_to("front/app")).replace("/route.ts", "").replace("\\", "/")
+        for path in api_files
+    ]
+    middleware_src = Path("front/middleware.ts").read_text()
+
+    protected_prefixes = (
+        "/api/v1/protected",
+        "/api/v1/preferences",
+        "/api/v1/analysis",
+        "/api/v1/compare",
+        "/api/v1/admin",
+    )
+    public_prefixes = ("/api/v1/public", "/api/v1/auth")
+
+    for route in route_paths:
+        assert route.startswith(protected_prefixes + public_prefixes), f"Unclassified API route: {route}"
+
+    for prefix in protected_prefixes:
+        expected = f'"{prefix}(.*)"'
+        assert expected in middleware_src, f"Middleware missing protected matcher for {prefix}"
+
+
 def test_frontend_layout_and_shell_wire_clerk_auth():
     layout_src = Path("front/app/layout.tsx").read_text()
     shell_src = Path("front/components/app-shell.tsx").read_text()
