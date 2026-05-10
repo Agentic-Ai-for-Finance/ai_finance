@@ -24,3 +24,12 @@ def test_phase1_grant_hardening_sql_revokes_direct_dashboard_reads():
     assert "revoke all on table public.bank_debit_card_ops_metrics from anon, authenticated;" in sql
     assert "revoke all on table public.prepaid_card_ops_metrics from anon, authenticated;" in sql
     assert "revoke all on table public.checking_accounts_metrics from anon, authenticated;" in sql
+
+
+def test_phase1_profile_audit_least_privilege_sql():
+    sql = Path("db/020_phase1_profile_audit_least_privilege.sql").read_text()
+
+    assert "revoke all on table public.app_user_profiles from authenticated;" in sql
+    assert "grant select, insert, update on table public.app_user_profiles to authenticated;" in sql
+    assert "revoke all on table public.app_audit_logs from authenticated;" in sql
+    assert "grant select on table public.app_audit_logs to authenticated;" in sql
