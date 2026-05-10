@@ -17,6 +17,14 @@ function getAdminEmailAllowlist() {
   );
 }
 
+export function getAuthEnvDiagnostics() {
+  return {
+    hasPublishableKey: Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
+    hasSecretKey: Boolean(process.env.CLERK_SECRET_KEY),
+    hasAdminAllowlist: getAdminEmailAllowlist().size > 0,
+  };
+}
+
 export async function getCurrentAppSession(): Promise<AppSession | null> {
   const { userId } = await auth();
 

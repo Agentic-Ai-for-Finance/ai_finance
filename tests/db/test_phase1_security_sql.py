@@ -13,3 +13,14 @@ def test_phase1_security_sql_adds_user_profiles_audit_logs_and_rls():
     assert 'create policy "app_user_profiles_update_own"' in sql
     assert "public.requesting_user_id()" in sql
     assert "grant select, insert, update on public.app_user_profiles to authenticated" in sql
+
+
+def test_phase1_grant_hardening_sql_revokes_direct_dashboard_reads():
+    sql = Path("db/019_phase1_grant_hardening.sql").read_text()
+
+    assert "revoke all on table public.app_user_profiles from anon;" in sql
+    assert "revoke all on table public.app_audit_logs from anon;" in sql
+    assert "revoke all on table public.bank_credit_card_ops_metrics from anon, authenticated;" in sql
+    assert "revoke all on table public.bank_debit_card_ops_metrics from anon, authenticated;" in sql
+    assert "revoke all on table public.prepaid_card_ops_metrics from anon, authenticated;" in sql
+    assert "revoke all on table public.checking_accounts_metrics from anon, authenticated;" in sql
