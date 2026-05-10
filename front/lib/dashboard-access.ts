@@ -15,7 +15,7 @@ export function requiresProtectedCreditCardMetric(
     return !["total-active-cards", "total-cards-with-operations"].includes(viewKey);
   }
 
-  return viewKey !== "transactions";
+  return !["volume", "transactions"].includes(viewKey);
 }
 
 export function requiresProtectedDebitMetric(
@@ -26,7 +26,7 @@ export function requiresProtectedDebitMetric(
     return !["total-active-cards", "total-cards-with-operations"].includes(viewKey);
   }
 
-  return viewKey !== "transactions";
+  return !["volume", "transactions"].includes(viewKey);
 }
 
 export function requiresProtectedPrepaidMetric(
@@ -37,9 +37,9 @@ export function requiresProtectedPrepaidMetric(
     return !["total-active-cards", "total-cards-with-operations"].includes(viewKey);
   }
 
-  return viewKey !== "transactions";
+  return !["volume", "transactions"].includes(viewKey);
 }
 
 export function requiresProtectedCheckingMetric(viewKey: CheckingAccountChartViewKey) {
-  return viewKey !== "number-of-accounts";
+  return viewKey === "average-balance";
 }

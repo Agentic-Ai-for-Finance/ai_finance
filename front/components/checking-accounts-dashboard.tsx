@@ -486,15 +486,25 @@ export function CheckingAccountsDashboard({
 
             <div className="flex flex-wrap items-center gap-2 pb-1">
               {checkingAccountChartViews.map((item, index, items) => (
+                (() => {
+                  const isTabLocked = !isSignedIn && requiresProtectedCheckingMetric(item.key);
+                  return (
                 <MetricTabButton
                   key={item.key}
                   active={viewKey === item.key}
+                  disabled={isTabLocked}
                   tooltipAlign={index === items.length - 1 ? "right" : "center"}
                   label={item.label}
                   description={item.description}
                   unitLabel={item.unitLabel}
-                  onClick={() => setViewKey(item.key)}
+                  onClick={() => {
+                    if (!isTabLocked) {
+                      setViewKey(item.key);
+                    }
+                  }}
                 />
+                  );
+                })()
               ))}
             </div>
           </div>
@@ -729,6 +739,7 @@ function calculateSystemTotal(
 
 function MetricTabButton({
   active,
+  disabled = false,
   tooltipAlign,
   label,
   description,
@@ -736,6 +747,7 @@ function MetricTabButton({
   onClick,
 }: {
   active: boolean;
+  disabled?: boolean;
   tooltipAlign?: "center" | "right";
   label: string;
   description: string;
@@ -746,11 +758,15 @@ function MetricTabButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
       className={cn(
         "group/tab relative shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition",
-        active
-          ? "border-brand/60 bg-brand/10 text-white"
-          : "border-border bg-panelMuted text-muted hover:text-white"
+        disabled
+          ? "cursor-not-allowed border-border/70 bg-panelMuted/60 text-muted/70"
+          : active
+            ? "border-brand/60 bg-brand/10 text-white"
+            : "border-border bg-panelMuted text-muted hover:text-white"
       )}
     >
       <span className="inline-flex items-center gap-2">
