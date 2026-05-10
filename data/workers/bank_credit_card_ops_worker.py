@@ -109,8 +109,16 @@ def load_active_operation_configs(sb) -> list[BankCreditCardOperationConfig]:
         .execute()
     )
     endpoints_by_operation: dict[str, dict[str, BankCreditCardEndpointConfig]] = {}
+    supported_operations = {
+        BANK_CREDIT_CARD_OPERATION_COMPRAS,
+        BANK_CREDIT_CARD_OPERATION_COMPRAS_NON_BANKING,
+        BANK_CREDIT_CARD_OPERATION_AVANCE_EN_EFECTIVO,
+        BANK_CREDIT_CARD_OPERATION_CARGOS_POR_SERVICIO,
+    }
     for row in response.data or []:
         if not row.get("operation_type") or not row.get("measure_kind") or not row.get("source_tag"):
+            continue
+        if row["operation_type"] not in supported_operations:
             continue
 
         endpoint = BankCreditCardEndpointConfig.from_row(row)

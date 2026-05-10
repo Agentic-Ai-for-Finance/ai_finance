@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BankSelector } from "@/components/bank-selector";
-import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard-states";
+import { EmptyState, ErrorState, LoadingState, LockedMetricState } from "@/components/dashboard-states";
 import { MetricLineChart } from "@/components/metric-line-chart";
+import { useOptionalAuth } from "@/lib/clerk-compat";
 import {
   getBankDisplayName,
   getCanonicalInstitution,
@@ -31,6 +32,7 @@ import {
   type OperationName,
   type OperationsRateViewKey,
 } from "@/lib/credit-card-config";
+import { requiresProtectedCreditCardMetric } from "@/lib/dashboard-access";
 import {
   addMonths,
   buildMonthOptions,
@@ -44,6 +46,7 @@ import {
   normalizeMonthValue,
   parseMonthValue,
 } from "@/lib/formatters";
+import { useSavedBankPreferences } from "@/lib/user-bank-preferences";
 import { cn } from "@/lib/utils";
 
 type CreditCardsDashboardProps = {
@@ -77,6 +80,7 @@ export function CreditCardsDashboard({
   endMonthParam,
   ufParam,
 }: CreditCardsDashboardProps) {
+  const { isSignedIn } = useOptionalAuth();
   const isOperationsRateDashboard = isOperationsRateOperation(operation);
   const initialMetricKey = isOperationsRateDashboard
     ? isOperationsRateViewKey(initialView)
@@ -95,6 +99,9 @@ export function CreditCardsDashboard({
   const [isLoadingRows, setIsLoadingRows] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasSeededSelectionRef = useRef(false);
+  const { defaultInstitutionCodes } = useSavedBankPreferences("credit-cards");
+  const requiresProtectedMetric = requiresProtectedCreditCardMetric(operation, viewKey);
+  const isMetricLocked = requiresProtectedMetric && !isSignedIn;
 
   useEffect(() => {
     setViewKey(
@@ -202,12 +209,21 @@ export function CreditCardsDashboard({
     let isCancelled = false;
 
     async function loadRows() {
+      if (isMetricLocked) {
+        setOperationRows([]);
+        setOperationsRateRows([]);
+        setIsLoadingRows(false);
+        setErrorMessage(null);
+        return;
+      }
+
       setIsLoadingRows(true);
       setErrorMessage(null);
+      const access = requiresProtectedMetric ? "protected" : "public";
 
       try {
         if (isOperationsRateDashboard) {
-          const nextRows = await fetchOperationsRateMetrics(`${startMonth}-01`, `${endMonth}-01`);
+          const nextRows = await fetchOperationsRateMetrics(`${startMonth}-01`, `${endMonth}-01`, access);
 
           if (!nextRows.length) {
             throw new Error("The selected time range returned no rows.");
@@ -220,7 +236,7 @@ export function CreditCardsDashboard({
           return;
         }
 
-        const nextRows = await fetchCreditCardMetrics(operation, `${startMonth}-01`, `${endMonth}-01`);
+        const nextRows = await fetchCreditCardMetrics(operation, `${startMonth}-01`, `${endMonth}-01`, access);
 
         if (!nextRows.length) {
           throw new Error("The selected time range returned no rows.");
@@ -248,7 +264,7 @@ export function CreditCardsDashboard({
     return () => {
       isCancelled = true;
     };
-  }, [endMonth, isOperationsRateDashboard, operation, startMonth]);
+  }, [endMonth, isMetricLocked, isOperationsRateDashboard, operation, requiresProtectedMetric, startMonth]);
 
   const activeUfValue = useMemo(() => {
     const parsed = Number(ufParam ?? "");
@@ -360,8 +376,13 @@ export function CreditCardsDashboard({
   ]);
 
   const defaultSelectedBanks = useMemo(
-    () => computeDefaultSelectedBanks(bankSeries, latestLoadedMonth),
-    [bankSeries, latestLoadedMonth]
+    () =>
+      defaultInstitutionCodes.length
+        ? bankSeries
+            .filter((bank) => defaultInstitutionCodes.includes(bank.institutionCode))
+            .map((bank) => bank.institutionCode)
+        : computeDefaultSelectedBanks(bankSeries, latestLoadedMonth),
+    [bankSeries, defaultInstitutionCodes, latestLoadedMonth]
   );
 
   useEffect(() => {
@@ -435,7 +456,7 @@ export function CreditCardsDashboard({
           return accumulator;
         }
 
-        accumulator.volume += Number((row as CreditCardMetricRow).real_value_uf) * activeUfValue;
+        accumulator.volume += Number((row as CreditCardMetricRow).real_value_uf ?? 0) * activeUfValue;
         accumulator.transactions += Number((row as CreditCardMetricRow).transaction_count);
         return accumulator;
       },
@@ -476,7 +497,7 @@ export function CreditCardsDashboard({
         const shareEnd = supportsMarketShare
           ? calculateMarketShares(
               viewKey === "volume"
-                ? Number((row as CreditCardMetricRow).real_value_uf) * activeUfValue
+                ? Number((row as CreditCardMetricRow).real_value_uf ?? 0) * activeUfValue
                 : Number((row as CreditCardMetricRow).transaction_count),
               viewKey === "volume" ? totals.volume : totals.transactions
             )
@@ -715,9 +736,13 @@ export function CreditCardsDashboard({
 
             <div className="flex flex-wrap items-center gap-2 pb-1">
               {(isOperationsRateDashboard ? operationsRateViews : chartViews).map((item, index, items) => (
+                (() => {
+                  const isTabLocked = !isSignedIn && requiresProtectedCreditCardMetric(operation, item.key);
+                  return (
                 <MetricTabButton
                   key={item.key}
                   active={viewKey === item.key}
+                  disabled={isTabLocked}
                   tooltipAlign={index === items.length - 1 ? "right" : "center"}
                   label={item.label}
                   description={
@@ -730,13 +755,24 @@ export function CreditCardsDashboard({
                       : item.description
                   }
                   unitLabel={item.unitLabel}
-                  onClick={() => setViewKey(item.key)}
+                  onClick={() => {
+                    if (!isTabLocked) {
+                      setViewKey(item.key);
+                    }
+                  }}
                 />
+                  );
+                })()
               ))}
             </div>
           </div>
 
-          {isLoadingRows ? (
+          {isMetricLocked ? (
+            <LockedMetricState
+              compact
+              description={`Login to unlock ${activeMetric.label.toLowerCase()} for ${operationLabelMap[operation]}.`}
+            />
+          ) : isLoadingRows ? (
             <LoadingState label="Loading time series" compact />
           ) : selectedSeries.length ? (
             <MetricLineChart
@@ -766,6 +802,14 @@ export function CreditCardsDashboard({
         />
 
         <div className="border-t border-border pt-8">
+          {isMetricLocked ? (
+            <LockedMetricState
+              compact
+              title={`${activeMetric.label} stays locked while logged out`}
+              description="The metric pill remains visible, but the data table unlocks only after sign-in."
+            />
+          ) : (
+            <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
               <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
@@ -826,6 +870,8 @@ export function CreditCardsDashboard({
               </tbody>
             </table>
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -843,13 +889,13 @@ function getOperationMetricValue(
   activeUfValue: number
 ): number | null {
   if (viewKey === "volume") {
-    return Number(row.real_value_uf) * activeUfValue;
+    return row.real_value_uf ? Number(row.real_value_uf) * activeUfValue : null;
   }
   if (viewKey === "transactions") {
     return Number(row.transaction_count);
   }
   if (viewKey === "average-ticket") {
-    return Number(row.average_ticket_uf) * activeUfValue;
+    return row.average_ticket_uf ? Number(row.average_ticket_uf) * activeUfValue : null;
   }
   if (viewKey === "operations-per-active-card") {
     return row.operations_per_active_card === null ? null : Number(row.operations_per_active_card);
@@ -877,8 +923,8 @@ function aggregateOperationRows(rows: CreditCardMetricRow[]): CreditCardMetricRo
     }
 
     const currentTransactions = Number(existing.transaction_count) + Number(row.transaction_count);
-    const currentNominal = Number(existing.nominal_volume_millions_clp) + Number(row.nominal_volume_millions_clp);
-    const currentRealUf = Number(existing.real_value_uf) + Number(row.real_value_uf);
+    const currentNominal = Number(existing.nominal_volume_millions_clp ?? 0) + Number(row.nominal_volume_millions_clp ?? 0);
+    const currentRealUf = Number(existing.real_value_uf ?? 0) + Number(row.real_value_uf ?? 0);
     const currentActiveCards = Number(existing.total_active_cards ?? 0) + Number(row.total_active_cards ?? 0);
 
     grouped.set(key, {
@@ -1001,6 +1047,7 @@ function formatShareGrowthWithArrow(value: number | null): string {
 
 function MetricTabButton({
   active,
+  disabled = false,
   tooltipAlign,
   label,
   description,
@@ -1008,6 +1055,7 @@ function MetricTabButton({
   onClick,
 }: {
   active: boolean;
+  disabled?: boolean;
   tooltipAlign?: "center" | "right";
   label: string;
   description: string;
@@ -1018,11 +1066,15 @@ function MetricTabButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
       className={cn(
         "group/tab relative shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition",
-        active
-          ? "border-brand/60 bg-brand/10 text-white"
-          : "border-border bg-panelMuted text-muted hover:text-white"
+        disabled
+          ? "cursor-not-allowed border-border/70 bg-panelMuted/60 text-muted/70"
+          : active
+            ? "border-brand/60 bg-brand/10 text-white"
+            : "border-border bg-panelMuted text-muted hover:text-white"
       )}
     >
       <span className="inline-flex items-center gap-2">
@@ -1033,12 +1085,13 @@ function MetricTabButton({
           </span>
           <span
             className={cn(
-              "pointer-events-none absolute bottom-full z-30 mb-2 hidden w-80 max-w-[90vw] whitespace-normal break-words rounded-2xl border border-border bg-[#07101c] p-3 text-left text-xs leading-5 text-muted shadow-2xl group-hover/info:block group-focus-visible/info:block",
+              "pointer-events-none absolute bottom-full z-30 mb-2 hidden w-80 max-w-[90vw] whitespace-normal break-words rounded-2xl border border-border bg-[#07101c] p-3 text-left text-xs leading-5 text-muted shadow-2xl",
+              disabled ? "group-hover/tab:block group-focus-visible/tab:block" : "group-hover/info:block group-focus-visible/info:block",
               tooltipAlign === "right" ? "right-0" : "left-1/2 -translate-x-1/2"
             )}
           >
             <span className="block text-sm font-semibold text-white">{label}</span>
-            <span className="mt-1 block">{description}</span>
+            <span className="mt-1 block">{disabled ? "Must login to see this data" : description}</span>
             {unitLabel ? <span className="mt-1 block text-xs italic text-brand">{unitLabel}</span> : null}
           </span>
         </span>
@@ -1084,7 +1137,7 @@ function calculateSystemAverage(rows: Array<CreditCardMetricRow | OperationsRate
         return accumulator;
       }
 
-      accumulator.volume += Number(row.real_value_uf) * activeUfValue;
+      accumulator.volume += Number(row.real_value_uf ?? 0) * activeUfValue;
       accumulator.transactions += Number(row.transaction_count);
       return accumulator;
     },

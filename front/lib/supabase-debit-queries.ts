@@ -1,6 +1,5 @@
-import { getSupabaseBrowserClient } from "@/lib/supabase-client";
-
-const METRICS_PAGE_SIZE = 1000;
+import { getJson } from "@/lib/api-client";
+import type { MetricAccess } from "@/lib/supabase-queries";
 
 export type DebitCardMetricRow = {
   operation_type: "Debit Transactions" | "ATM Withdrawals";
@@ -9,13 +8,13 @@ export type DebitCardMetricRow = {
   institution_name: string;
   period_month: string;
   transaction_count: string;
-  nominal_volume_millions_clp: string;
-  uf_date_used: string;
-  uf_value_used: string;
-  real_value_uf: string;
-  average_ticket_uf: string;
-  total_active_cards: string | null;
-  operations_per_active_card: string | null;
+  nominal_volume_millions_clp?: string | null;
+  uf_date_used?: string | null;
+  uf_value_used?: string | null;
+  real_value_uf?: string | null;
+  average_ticket_uf?: string | null;
+  total_active_cards?: string | null;
+  operations_per_active_card?: string | null;
   source_dataset_code: string;
   updated_at: string;
 };
@@ -25,126 +24,57 @@ export type DebitOperationMetricRow = {
   institution_name: string;
   period_month: string;
   total_active_cards: string;
-  active_cards_primary: string;
-  active_cards_supplementary: string;
+  active_cards_primary?: string | null;
+  active_cards_supplementary?: string | null;
   total_cards_with_operations: string;
-  operations_rate: string | null;
+  operations_rate?: string | null;
+  supplementary_rate?: string | null;
 };
 
 export async function fetchDebitDatasetBoundary(
   operation: "Debit Transactions" | "ATM Withdrawals",
   boundary: "latest" | "earliest"
 ): Promise<string | null> {
-  const supabase = getSupabaseBrowserClient();
-  const ascending = boundary === "earliest";
+  const response = await getJson<{ periodMonth: string | null }>(
+    `/api/v1/public/metrics?dataset=debit-card-ops&mode=boundary&operation=${encodeURIComponent(operation)}&boundary=${boundary}`
+  );
 
-  const { data, error } = await supabase
-    .from("bank_debit_card_ops_metrics")
-    .select("period_month")
-    .eq("operation_type", operation)
-    .order("period_month", { ascending })
-    .limit(1);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data?.[0]?.period_month ?? null;
+  return response.periodMonth;
 }
 
 export async function fetchDebitCardMetrics(
   operation: "Debit Transactions" | "ATM Withdrawals",
   startDateIso: string,
-  endDateIso: string
+  endDateIso: string,
+  access: MetricAccess
 ): Promise<DebitCardMetricRow[]> {
-  const supabase = getSupabaseBrowserClient();
-  const rows: DebitCardMetricRow[] = [];
-  let pageStart = 0;
+  const basePath = access === "protected" ? "/api/v1/protected/metrics" : "/api/v1/public/metrics";
+  const response = await getJson<{ rows: DebitCardMetricRow[] }>(
+    `${basePath}?dataset=debit-card-ops&mode=rows&operation=${encodeURIComponent(operation)}&start=${encodeURIComponent(startDateIso)}&end=${encodeURIComponent(endDateIso)}`
+  );
 
-  while (true) {
-    const pageEnd = pageStart + METRICS_PAGE_SIZE - 1;
-    const { data, error } = await supabase
-      .from("bank_debit_card_ops_metrics")
-      .select(
-        "operation_type,dataset_code,institution_code,institution_name,period_month,transaction_count,nominal_volume_millions_clp,uf_date_used,uf_value_used,real_value_uf,average_ticket_uf,total_active_cards,operations_per_active_card,source_dataset_code,updated_at"
-      )
-      .eq("operation_type", operation)
-      .gte("period_month", startDateIso)
-      .lte("period_month", endDateIso)
-      .order("period_month", { ascending: true })
-      .order("institution_name", { ascending: true })
-      .range(pageStart, pageEnd);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    const pageRows = (data ?? []) as DebitCardMetricRow[];
-    rows.push(...pageRows);
-
-    if (pageRows.length < METRICS_PAGE_SIZE) {
-      break;
-    }
-
-    pageStart += METRICS_PAGE_SIZE;
-  }
-
-  return rows;
+  return response.rows;
 }
 
 export async function fetchDebitOperationMetricsBoundary(
   boundary: "latest" | "earliest"
 ): Promise<string | null> {
-  const supabase = getSupabaseBrowserClient();
-  const ascending = boundary === "earliest";
+  const response = await getJson<{ periodMonth: string | null }>(
+    `/api/v1/public/metrics?dataset=debit-card-activation&mode=boundary&boundary=${boundary}`
+  );
 
-  const { data, error } = await supabase
-    .from("bank_debit_card_operation_metrics")
-    .select("period_month")
-    .order("period_month", { ascending })
-    .limit(1);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data?.[0]?.period_month ?? null;
+  return response.periodMonth;
 }
 
 export async function fetchDebitOperationMetrics(
   startDateIso: string,
-  endDateIso: string
+  endDateIso: string,
+  access: MetricAccess
 ): Promise<DebitOperationMetricRow[]> {
-  const supabase = getSupabaseBrowserClient();
-  const rows: DebitOperationMetricRow[] = [];
-  let pageStart = 0;
+  const basePath = access === "protected" ? "/api/v1/protected/metrics" : "/api/v1/public/metrics";
+  const response = await getJson<{ rows: DebitOperationMetricRow[] }>(
+    `${basePath}?dataset=debit-card-activation&mode=rows&start=${encodeURIComponent(startDateIso)}&end=${encodeURIComponent(endDateIso)}`
+  );
 
-  while (true) {
-    const pageEnd = pageStart + METRICS_PAGE_SIZE - 1;
-    const { data, error } = await supabase
-      .from("bank_debit_card_operation_metrics")
-      .select(
-        "institution_code,institution_name,period_month,total_active_cards,active_cards_primary,active_cards_supplementary,total_cards_with_operations,operations_rate"
-      )
-      .gte("period_month", startDateIso)
-      .lte("period_month", endDateIso)
-      .order("period_month", { ascending: true })
-      .order("institution_name", { ascending: true })
-      .range(pageStart, pageEnd);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    const pageRows = (data ?? []) as DebitOperationMetricRow[];
-    rows.push(...pageRows);
-
-    if (pageRows.length < METRICS_PAGE_SIZE) {
-      break;
-    }
-
-    pageStart += METRICS_PAGE_SIZE;
-  }
-
-  return rows;
+  return response.rows;
 }
