@@ -17,7 +17,9 @@ from data.sources.checking_accounts import (
 )
 
 
-def _payload(*, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]):
+def _payload(
+    *, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]
+):
     return {
         "series": [
             {
@@ -77,7 +79,10 @@ def test_parse_account_count_payload_normalizes_observations():
     )
 
     assert len(observations) == 2
-    assert observations[0].dataset_code == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    assert (
+        observations[0].dataset_code
+        == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    )
     assert observations[0].institution_code == "BICE"
     assert observations[0].period_month == date(2026, 3, 1)
     assert observations[0].value == Decimal("1234")
@@ -114,7 +119,10 @@ def test_merge_measure_observations_builds_raw_rows():
 
     assert len(observations) == 1
     assert observations[0].account_type == "Natural Person Without Interest"
-    assert observations[0].dataset_code == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    assert (
+        observations[0].dataset_code
+        == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    )
     assert observations[0].account_count == Decimal("2500")
     assert observations[0].nominal_balance_millions_clp == Decimal("120507338")
 

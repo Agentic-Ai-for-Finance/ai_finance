@@ -34,12 +34,20 @@ PREPAID_CARD_OPERATION_TYPES = (
     PREPAID_CARD_OPERATION_ATM_WITHDRAWALS,
 )
 
-PREPAID_CARD_OPS_NATURAL_PERSON_PURCHASES_DATASET = "prepaid_card_ops_natural_person_purchases"
-PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET = "prepaid_card_ops_natural_person_utilities"
-PREPAID_CARD_OPS_NATURAL_PERSON_ATM_WITHDRAWALS_DATASET = "prepaid_card_ops_natural_person_atm_withdrawals"
+PREPAID_CARD_OPS_NATURAL_PERSON_PURCHASES_DATASET = (
+    "prepaid_card_ops_natural_person_purchases"
+)
+PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET = (
+    "prepaid_card_ops_natural_person_utilities"
+)
+PREPAID_CARD_OPS_NATURAL_PERSON_ATM_WITHDRAWALS_DATASET = (
+    "prepaid_card_ops_natural_person_atm_withdrawals"
+)
 PREPAID_CARD_OPS_BUSINESS_PURCHASES_DATASET = "prepaid_card_ops_business_purchases"
 PREPAID_CARD_OPS_BUSINESS_UTILITIES_DATASET = "prepaid_card_ops_business_utilities"
-PREPAID_CARD_OPS_BUSINESS_ATM_WITHDRAWALS_DATASET = "prepaid_card_ops_business_atm_withdrawals"
+PREPAID_CARD_OPS_BUSINESS_ATM_WITHDRAWALS_DATASET = (
+    "prepaid_card_ops_business_atm_withdrawals"
+)
 
 PREPAID_CARD_COUNTS_NATURAL_PERSON_DATASET = "prepaid_card_counts_natural_person"
 PREPAID_CARD_COUNTS_BUSINESS_DATASET = "prepaid_card_counts_business"
@@ -49,7 +57,9 @@ PREPAID_CARD_ACTIVE_CARDS_TOTAL_NATURAL_PERSON_DATASET = (
 PREPAID_CARD_CARDS_WITH_OPERATIONS_NATURAL_PERSON_DATASET = (
     "prepaid_card_cards_with_operations_natural_person"
 )
-PREPAID_CARD_ACTIVE_CARDS_TOTAL_BUSINESS_DATASET = "prepaid_card_active_cards_total_business"
+PREPAID_CARD_ACTIVE_CARDS_TOTAL_BUSINESS_DATASET = (
+    "prepaid_card_active_cards_total_business"
+)
 PREPAID_CARD_CARDS_WITH_OPERATIONS_BUSINESS_DATASET = (
     "prepaid_card_cards_with_operations_business"
 )
@@ -196,8 +206,12 @@ class PrepaidCardOpsCuratedObservation:
             "uf_value_used": str(self.uf_value_used),
             "real_value_uf": str(self.real_value_uf),
             "average_ticket_uf": str(self.average_ticket_uf),
-            "total_active_cards": None if self.total_active_cards is None else str(self.total_active_cards),
-            "operations_per_active_card": None if self.operations_per_active_card is None else str(self.operations_per_active_card),
+            "total_active_cards": None
+            if self.total_active_cards is None
+            else str(self.total_active_cards),
+            "operations_per_active_card": None
+            if self.operations_per_active_card is None
+            else str(self.operations_per_active_card),
             "source_dataset_code": self.source_dataset_code,
         }
 
@@ -264,5 +278,7 @@ class PrepaidCardCountsCuratedObservation:
             "period_month": self.period_month.isoformat(),
             "total_active_cards": str(self.total_active_cards),
             "total_cards_with_operations": str(self.total_cards_with_operations),
-            "operations_rate": None if self.operations_rate is None else str(self.operations_rate),
+            "operations_rate": None
+            if self.operations_rate is None
+            else str(self.operations_rate),
         }

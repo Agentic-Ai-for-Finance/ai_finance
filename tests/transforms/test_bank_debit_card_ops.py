@@ -69,9 +69,11 @@ def test_to_curated_bank_debit_card_ops_adds_operations_per_active_card():
     curated = to_curated_bank_debit_card_ops(
         [_raw_observation()],
         uf_lookup=lambda _uf_date: Decimal("40000"),
-        active_cards_lookup=lambda institution_code, period_month: Decimal("500")
-        if institution_code == "BICE" and period_month == date(2026, 4, 1)
-        else None,
+        active_cards_lookup=lambda institution_code, period_month: (
+            Decimal("500")
+            if institution_code == "BICE" and period_month == date(2026, 4, 1)
+            else None
+        ),
     )
 
     assert curated[0].total_active_cards == Decimal("500")

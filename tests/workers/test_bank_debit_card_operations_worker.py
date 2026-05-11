@@ -2,7 +2,6 @@ import asyncio
 from datetime import date
 from decimal import Decimal
 
-import pytest
 
 from data.models.bank_debit_card_operations import (
     BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_ATM_ONLY_DATASET,
@@ -75,7 +74,9 @@ class FakeTable:
 
     def range(self, start, end):
         self._range = (start, end)
-        self.db.setdefault("ranges", []).append({"table": self.name, "start": start, "end": end})
+        self.db.setdefault("ranges", []).append(
+            {"table": self.name, "start": start, "end": end}
+        )
         return self
 
     def upsert(self, payload, **kwargs):
@@ -99,7 +100,8 @@ class FakeTable:
                 [
                     row
                     for row in self.db["datasets"]
-                    if self._eq_filter is None or row[self._eq_filter[0]] == self._eq_filter[1]
+                    if self._eq_filter is None
+                    or row[self._eq_filter[0]] == self._eq_filter[1]
                 ]
             )
 
@@ -195,7 +197,8 @@ def _batch(
         raw_observations=raw_observations,
         latest_source_month=period_month,
         earliest_source_month=period_month,
-        latest_transaction_count_source_month=transaction_count_period_month or period_month,
+        latest_transaction_count_source_month=transaction_count_period_month
+        or period_month,
         latest_nominal_volume_source_month=nominal_volume_period_month or period_month,
     )
 
@@ -460,12 +463,20 @@ def test_load_active_card_counts_config_reads_registry_rows():
 
     assert config is not None
     assert config.dataset_code == BANK_DEBIT_CARD_COUNTS_DATASET
-    assert config.active_cards_primary_debit_dataset_code == BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET
-    assert config.cards_with_operations_atm_only_dataset_code == BANK_DEBIT_CARD_CARDS_WITH_OPERATIONS_ATM_ONLY_DATASET
+    assert (
+        config.active_cards_primary_debit_dataset_code
+        == BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET
+    )
+    assert (
+        config.cards_with_operations_atm_only_dataset_code
+        == BANK_DEBIT_CARD_CARDS_WITH_OPERATIONS_ATM_ONLY_DATASET
+    )
 
 
 def test_sync_operation_once_noops_when_source_month_is_unchanged(monkeypatch):
-    dataset = _config(BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET, "Debit Transactions")
+    dataset = _config(
+        BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET, "Debit Transactions"
+    )
     sb = FakeSupabase(
         states={
             f"{BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET}_transaction_count": [
@@ -497,7 +508,9 @@ def test_sync_operation_once_noops_when_source_month_is_unchanged(monkeypatch):
 
 
 def test_sync_operation_once_syncs_newer_source_and_advances_state(monkeypatch):
-    dataset = _config(BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET, "Debit Transactions")
+    dataset = _config(
+        BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET, "Debit Transactions"
+    )
     sb = FakeSupabase(
         states={
             f"{BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET}_transaction_count": [
@@ -533,14 +546,30 @@ def test_sync_card_counts_once_syncs_newer_source_and_advances_state(monkeypatch
     config = _counts_config()
     sb = FakeSupabase(
         states={
-            BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET: [{"latest_source_month": "2026-03-01"}],
-            BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_ATM_ONLY_DATASET: [{"latest_source_month": "2026-03-01"}],
-            BANK_DEBIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DEBIT_DATASET: [{"latest_source_month": "2026-03-01"}],
-            BANK_DEBIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_ATM_ONLY_DATASET: [{"latest_source_month": "2026-03-01"}],
-            "bank_debit_card_active_cards_total_debit": [{"latest_source_month": "2026-03-01"}],
-            "bank_debit_card_active_cards_total_atm_only": [{"latest_source_month": "2026-03-01"}],
-            BANK_DEBIT_CARD_CARDS_WITH_OPERATIONS_DEBIT_DATASET: [{"latest_source_month": "2026-03-01"}],
-            BANK_DEBIT_CARD_CARDS_WITH_OPERATIONS_ATM_ONLY_DATASET: [{"latest_source_month": "2026-03-01"}],
+            BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET: [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_ATM_ONLY_DATASET: [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            BANK_DEBIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DEBIT_DATASET: [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            BANK_DEBIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_ATM_ONLY_DATASET: [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            "bank_debit_card_active_cards_total_debit": [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            "bank_debit_card_active_cards_total_atm_only": [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            BANK_DEBIT_CARD_CARDS_WITH_OPERATIONS_DEBIT_DATASET: [
+                {"latest_source_month": "2026-03-01"}
+            ],
+            BANK_DEBIT_CARD_CARDS_WITH_OPERATIONS_ATM_ONLY_DATASET: [
+                {"latest_source_month": "2026-03-01"}
+            ],
         },
     )
 
@@ -563,7 +592,9 @@ def test_sync_card_counts_once_syncs_newer_source_and_advances_state(monkeypatch
 
 
 def test_sync_all_bank_debit_card_ops_once_includes_card_counts(monkeypatch):
-    configs = [_config(BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET, "Debit Transactions")]
+    configs = [
+        _config(BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET, "Debit Transactions")
+    ]
     sb = FakeSupabase()
     count_config = _counts_config()
 

@@ -46,13 +46,21 @@ def test_credit_card_card_counts_sql_registers_new_dataset_tables():
 def test_credit_card_metrics_rollback_sql_defines_new_public_contract():
     sql = Path("db/009_credit_card_metrics_rollback.sql").read_text()
 
-    assert "rename column nominal_volume_thousands_millions_clp to nominal_volume_millions_clp" in sql
+    assert (
+        "rename column nominal_volume_thousands_millions_clp to nominal_volume_millions_clp"
+        in sql
+    )
     assert "alter view public.bank_credit_card_ops_metrics" in sql
     assert "create or replace view public.bank_credit_card_ops_metrics" in sql
     assert "nominal_volume_millions_clp" in sql
     assert "operations_per_active_card" in sql
-    assert "source_dataset_code,\n    curated.updated_at,\n    curated.total_active_cards" in sql
-    assert "create or replace view public.bank_credit_card_operations_rate_metrics" in sql
+    assert (
+        "source_dataset_code,\n    curated.updated_at,\n    curated.total_active_cards"
+        in sql
+    )
+    assert (
+        "create or replace view public.bank_credit_card_operations_rate_metrics" in sql
+    )
     assert "total_active_cards" in sql
     assert "active_cards_primary" in sql
     assert "active_cards_supplementary" in sql
@@ -73,9 +81,13 @@ def test_cmf_ops_cleanup_sql_drops_obsolete_split_tables():
     sql = Path("db/005_drop_obsolete_credit_card_tables.sql").read_text()
 
     assert "drop table if exists public.bank_credit_card_transaction_count_raw;" in sql
-    assert "drop table if exists public.bank_credit_card_transaction_count_curated;" in sql
+    assert (
+        "drop table if exists public.bank_credit_card_transaction_count_curated;" in sql
+    )
     assert "drop table if exists public.bank_credit_card_purchase_volume_raw;" in sql
-    assert "drop table if exists public.bank_credit_card_purchase_volume_curated;" in sql
+    assert (
+        "drop table if exists public.bank_credit_card_purchase_volume_curated;" in sql
+    )
 
 
 def test_rename_operations_rate_sql_updates_card_count_operation_type():
@@ -91,7 +103,9 @@ def test_rename_operations_rate_sql_updates_card_count_operation_type():
 
 
 def test_operations_rate_view_sql_exposes_primary_and_supplementary_operation_counts():
-    sql = Path("db/012_operations_rate_view_add_cards_with_operations_fields.sql").read_text()
+    sql = Path(
+        "db/012_operations_rate_view_add_cards_with_operations_fields.sql"
+    ).read_text()
 
     assert "drop view if exists public.bank_credit_card_operations_rate_metrics" in sql
     assert "create view public.bank_credit_card_operations_rate_metrics" in sql

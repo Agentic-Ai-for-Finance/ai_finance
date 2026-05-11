@@ -78,7 +78,9 @@ class FakeTable:
 
     def range(self, start, end):
         self._range = (start, end)
-        self.db.setdefault("ranges", []).append({"table": self.name, "start": start, "end": end})
+        self.db.setdefault("ranges", []).append(
+            {"table": self.name, "start": start, "end": end}
+        )
         return self
 
     def upsert(self, payload, **kwargs):
@@ -102,7 +104,8 @@ class FakeTable:
                 [
                     row
                     for row in self.db["datasets"]
-                    if self._eq_filter is None or row[self._eq_filter[0]] == self._eq_filter[1]
+                    if self._eq_filter is None
+                    or row[self._eq_filter[0]] == self._eq_filter[1]
                 ]
             )
 
@@ -198,7 +201,8 @@ def _batch(
         raw_observations=raw_observations,
         latest_source_month=period_month,
         earliest_source_month=period_month,
-        latest_transaction_count_source_month=transaction_count_period_month or period_month,
+        latest_transaction_count_source_month=transaction_count_period_month
+        or period_month,
         latest_nominal_volume_source_month=nominal_volume_period_month or period_month,
     )
 
@@ -501,8 +505,14 @@ def test_load_active_card_counts_config_reads_registry_rows():
 
     assert config is not None
     assert config.dataset_code == BANK_CREDIT_CARD_COUNTS_DATASET
-    assert config.active_cards_primary_dataset_code == BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET
-    assert config.active_cards_non_banking_dataset_code == BANK_CREDIT_CARD_ACTIVE_CARDS_NON_BANKING_DATASET
+    assert (
+        config.active_cards_primary_dataset_code
+        == BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET
+    )
+    assert (
+        config.active_cards_non_banking_dataset_code
+        == BANK_CREDIT_CARD_ACTIVE_CARDS_NON_BANKING_DATASET
+    )
 
 
 def test_sync_operation_once_noops_when_source_month_is_unchanged(monkeypatch):
@@ -629,8 +639,14 @@ def test_sync_operation_once_syncs_when_only_one_endpoint_advances(monkeypatch):
     )
 
     assert rows_synced == 1
-    assert sb.upserts[4]["payload"]["dataset_code"] == f"{BANK_CREDIT_CARD_OPS_COMPRAS_DATASET}_transaction_count"
-    assert sb.upserts[5]["payload"]["dataset_code"] == f"{BANK_CREDIT_CARD_OPS_COMPRAS_DATASET}_nominal_volume"
+    assert (
+        sb.upserts[4]["payload"]["dataset_code"]
+        == f"{BANK_CREDIT_CARD_OPS_COMPRAS_DATASET}_transaction_count"
+    )
+    assert (
+        sb.upserts[5]["payload"]["dataset_code"]
+        == f"{BANK_CREDIT_CARD_OPS_COMPRAS_DATASET}_nominal_volume"
+    )
 
 
 def test_sync_operation_once_records_failure_without_advancing_state(monkeypatch):
@@ -670,7 +686,9 @@ def test_sync_operation_once_records_failure_without_advancing_state(monkeypatch
     assert "latest_curated_month" not in sb.upserts[-1]["payload"]
 
 
-def test_sync_all_bank_credit_card_ops_once_continues_after_one_operation_failure(monkeypatch):
+def test_sync_all_bank_credit_card_ops_once_continues_after_one_operation_failure(
+    monkeypatch,
+):
     configs = [
         _config(BANK_CREDIT_CARD_OPS_COMPRAS_DATASET, "Compras"),
         _config(BANK_CREDIT_CARD_OPS_AVANCE_EN_EFECTIVO_DATASET, "Avance en Efectivo"),

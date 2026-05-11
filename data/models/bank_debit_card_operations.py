@@ -25,7 +25,9 @@ CMF_MEASURE_KIND_ACTIVE_CARDS_TOTAL_ATM_ONLY = "active_cards_total_atm_only"
 CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS_DEBIT = "cards_with_operations_debit"
 CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS_ATM_ONLY = "cards_with_operations_atm_only"
 
-BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET = "bank_debit_card_ops_debit_transactions"
+BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET = (
+    "bank_debit_card_ops_debit_transactions"
+)
 BANK_DEBIT_CARD_OPS_ATM_WITHDRAWALS_DATASET = "bank_debit_card_ops_atm_withdrawals"
 BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_TRANSACTION_COUNT_DATASET = (
     "bank_debit_card_ops_debit_transactions_transaction_count"
@@ -220,7 +222,9 @@ class BankDebitCardOpsCuratedObservation:
             "real_value_uf": str(self.real_value_uf),
             "average_ticket_uf": str(self.average_ticket_uf),
             "total_active_cards": (
-                None if self.total_active_cards is None else str(self.total_active_cards)
+                None
+                if self.total_active_cards is None
+                else str(self.total_active_cards)
             ),
             "operations_per_active_card": (
                 None

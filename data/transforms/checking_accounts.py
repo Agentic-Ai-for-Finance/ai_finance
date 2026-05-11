@@ -30,7 +30,9 @@ def to_curated_checking_accounts(
         real_balance_uf = nominal_balance_millions_clp / uf_value
         average_balance_uf = Decimal("0")
         if observation.account_count != 0:
-            average_balance_uf = (real_balance_uf / observation.account_count) * Decimal("1000000")
+            average_balance_uf = (
+                real_balance_uf / observation.account_count
+            ) * Decimal("1000000")
 
         curated_observations.append(
             CheckingAccountsCuratedObservation(

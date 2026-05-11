@@ -64,7 +64,9 @@ def derive_institution_code(source_codigo: str) -> str:
             agifi_index = parts.index("AGIFI")
             institution_code = parts[agifi_index + 1]
         except IndexError as exc:
-            raise ValueError(f"Cannot derive institution_code from {source_codigo}") from exc
+            raise ValueError(
+                f"Cannot derive institution_code from {source_codigo}"
+            ) from exc
     else:
         # Some CMF debit series omit AGIFI and encode bank code as *_<BANK>_NUM_MONT.
         if len(parts) >= 3 and parts[-2] in {"NUM", "MM$", "$"}:
@@ -146,12 +148,20 @@ def parse_transaction_count_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
-    return sorted(observations, key=lambda observation: (observation.institution_code, observation.period_month))
+    return sorted(
+        observations,
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def parse_nominal_volume_payload(
@@ -188,12 +198,20 @@ def parse_nominal_volume_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
-    return sorted(observations, key=lambda observation: (observation.institution_code, observation.period_month))
+    return sorted(
+        observations,
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def parse_card_count_payload(
@@ -228,12 +246,20 @@ def parse_card_count_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
-    return sorted(observations, key=lambda observation: (observation.institution_code, observation.period_month))
+    return sorted(
+        observations,
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def merge_operation_measure_observations(
@@ -298,7 +324,9 @@ async def fetch_transaction_count_observations(
         timeout=30,
     )
     response.raise_for_status()
-    return parse_transaction_count_payload(response.json(), operation_type=operation_type, dataset_code=dataset_code)
+    return parse_transaction_count_payload(
+        response.json(), operation_type=operation_type, dataset_code=dataset_code
+    )
 
 
 async def fetch_nominal_volume_observations(
@@ -321,7 +349,9 @@ async def fetch_nominal_volume_observations(
         timeout=30,
     )
     response.raise_for_status()
-    return parse_nominal_volume_payload(response.json(), operation_type=operation_type, dataset_code=dataset_code)
+    return parse_nominal_volume_payload(
+        response.json(), operation_type=operation_type, dataset_code=dataset_code
+    )
 
 
 async def fetch_card_count_observations(
@@ -393,7 +423,9 @@ async def fetch_operation_batch(
     return BankDebitCardOpsObservationBatch(
         raw_observations=raw_observations,
         latest_source_month=latest_source_month,
-        earliest_source_month=min((observation.period_month for observation in raw_observations), default=None),
+        earliest_source_month=min(
+            (observation.period_month for observation in raw_observations), default=None
+        ),
         latest_transaction_count_source_month=latest_transaction_count_source_month,
         latest_nominal_volume_source_month=latest_nominal_volume_source_month,
     )
@@ -522,14 +554,41 @@ async def fetch_card_counts_batch(
         ),
         latest_source_month=max(all_periods, default=None),
         earliest_source_month=min(all_periods, default=None),
-        latest_active_cards_primary_debit_source_month=max((observation.period_month for observation in active_primary_debit), default=None),
-        latest_active_cards_primary_atm_only_source_month=max((observation.period_month for observation in active_primary_atm_only), default=None),
-        latest_active_cards_supplementary_debit_source_month=max((observation.period_month for observation in active_supplementary_debit), default=None),
-        latest_active_cards_supplementary_atm_only_source_month=max((observation.period_month for observation in active_supplementary_atm_only), default=None),
-        latest_active_cards_total_debit_source_month=max((observation.period_month for observation in active_total_debit), default=None),
-        latest_active_cards_total_atm_only_source_month=max((observation.period_month for observation in active_total_atm_only), default=None),
-        latest_cards_with_operations_debit_source_month=max((observation.period_month for observation in cards_with_operations_debit), default=None),
-        latest_cards_with_operations_atm_only_source_month=max((observation.period_month for observation in cards_with_operations_atm_only), default=None),
+        latest_active_cards_primary_debit_source_month=max(
+            (observation.period_month for observation in active_primary_debit),
+            default=None,
+        ),
+        latest_active_cards_primary_atm_only_source_month=max(
+            (observation.period_month for observation in active_primary_atm_only),
+            default=None,
+        ),
+        latest_active_cards_supplementary_debit_source_month=max(
+            (observation.period_month for observation in active_supplementary_debit),
+            default=None,
+        ),
+        latest_active_cards_supplementary_atm_only_source_month=max(
+            (observation.period_month for observation in active_supplementary_atm_only),
+            default=None,
+        ),
+        latest_active_cards_total_debit_source_month=max(
+            (observation.period_month for observation in active_total_debit),
+            default=None,
+        ),
+        latest_active_cards_total_atm_only_source_month=max(
+            (observation.period_month for observation in active_total_atm_only),
+            default=None,
+        ),
+        latest_cards_with_operations_debit_source_month=max(
+            (observation.period_month for observation in cards_with_operations_debit),
+            default=None,
+        ),
+        latest_cards_with_operations_atm_only_source_month=max(
+            (
+                observation.period_month
+                for observation in cards_with_operations_atm_only
+            ),
+            default=None,
+        ),
     )
 
 

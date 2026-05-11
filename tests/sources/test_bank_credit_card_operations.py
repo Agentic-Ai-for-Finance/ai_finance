@@ -26,17 +26,16 @@ from tests.fixtures.bank_credit_card_ops_live_payload import (
 )
 
 
-def _payload(*, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]):
+def _payload(
+    *, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]
+):
     return {
         "series": [
             {
                 "id": series_id,
                 "Codigo": codigo,
                 "Nombre": nombre,
-                "data": [
-                    {"Fecha": fecha, "Valor": valor}
-                    for fecha, valor in values
-                ],
+                "data": [{"Fecha": fecha, "Valor": valor} for fecha, valor in values],
             }
         ]
     }
@@ -105,7 +104,9 @@ def test_parse_transaction_count_payload_normalizes_source_observations():
     )
 
     assert len(observations) == 2
-    assert observations[0].dataset_code == BANK_CREDIT_CARD_OPS_AVANCE_EN_EFECTIVO_DATASET
+    assert (
+        observations[0].dataset_code == BANK_CREDIT_CARD_OPS_AVANCE_EN_EFECTIVO_DATASET
+    )
     assert observations[0].source_series_id == "101"
     assert observations[0].source_codigo == "SBIF_TCRED_BANC_AVEF_AGIFI_BICE_NUM"
     assert observations[0].institution_code == "BICE"
@@ -130,14 +131,19 @@ def test_parse_nominal_volume_payload_normalizes_source_observations():
     )
 
     assert len(observations) == 2
-    assert observations[0].dataset_code == BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_DATASET
+    assert (
+        observations[0].dataset_code == BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_DATASET
+    )
     assert observations[0].source_series_id == "301"
     assert observations[0].source_codigo == "SBIF_TCRED_BANC_CSERV_AGIFI_BICE_$"
     assert observations[0].institution_code == "BICE"
     assert observations[0].institution_name == "Banco BICE"
     assert observations[0].period_month == date(2026, 3, 1)
     assert observations[0].value == Decimal("1000000")
-    assert observations[0].source_payload == {"Fecha": "2026-03-01", "Valor": "1.000.000"}
+    assert observations[0].source_payload == {
+        "Fecha": "2026-03-01",
+        "Valor": "1.000.000",
+    }
 
 
 def test_parse_card_count_payload_normalizes_source_observations():

@@ -36,7 +36,9 @@ def parse_uf_rows(payload: dict) -> list[UfValue]:
     return sorted(values, key=lambda value: value.uf_date)
 
 
-def build_historical_uf_url(template: str, api_key: str, today: date | None = None) -> str:
+def build_historical_uf_url(
+    template: str, api_key: str, today: date | None = None
+) -> str:
     """Build the CMF historical UF URL from the existing environment template."""
 
     current_date = today or date.today()

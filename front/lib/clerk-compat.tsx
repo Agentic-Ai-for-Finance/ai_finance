@@ -29,6 +29,8 @@ export function useOptionalAuth() {
     };
   }
 
+  // Clerk may be intentionally disabled in some environments; only call useAuth when enabled.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   return useAuth();
 }
 

@@ -40,9 +40,13 @@ def test_to_curated_prepaid_ops_enriches_with_uf_and_active_cards():
     curated = to_curated_prepaid_card_ops(
         [_raw_observation()],
         uf_lookup=lambda _uf_date: Decimal("40000"),
-        active_cards_lookup=lambda customer_type, institution_code, period_month: Decimal("500")
-        if customer_type == "Natural Person" and institution_code == "TENPO" and period_month == date(2026, 2, 1)
-        else None,
+        active_cards_lookup=lambda customer_type, institution_code, period_month: (
+            Decimal("500")
+            if customer_type == "Natural Person"
+            and institution_code == "TENPO"
+            and period_month == date(2026, 2, 1)
+            else None
+        ),
     )
 
     assert curated[0].customer_type == "Natural Person"

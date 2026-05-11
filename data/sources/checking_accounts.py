@@ -94,7 +94,12 @@ def parse_account_count_payload(
         source_codigo = _first_present(series, "Codigo", "codigo", "source_codigo")
         institution_code = derive_institution_code(source_codigo)
         source_nombre = _first_present(
-            series, "descripcionCorta", "DescripcionCorta", "Nombre", "nombre", "source_nombre"
+            series,
+            "descripcionCorta",
+            "DescripcionCorta",
+            "Nombre",
+            "nombre",
+            "source_nombre",
         )
         source_series_id = str(_first_present(series, "id", "Id", "source_series_id"))
 
@@ -111,11 +116,19 @@ def parse_account_count_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
-    return sorted(observations, key=lambda observation: (observation.institution_code, observation.period_month))
+    return sorted(
+        observations,
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def parse_nominal_balance_payload(
@@ -124,7 +137,9 @@ def parse_nominal_balance_payload(
     account_type: str,
     dataset_code: str,
 ) -> list[CheckingAccountsMeasureObservation]:
-    return parse_account_count_payload(payload, account_type=account_type, dataset_code=dataset_code)
+    return parse_account_count_payload(
+        payload, account_type=account_type, dataset_code=dataset_code
+    )
 
 
 def merge_measure_observations(
@@ -188,7 +203,9 @@ async def fetch_account_count_observations(
         timeout=30,
     )
     response.raise_for_status()
-    return parse_account_count_payload(response.json(), account_type=account_type, dataset_code=dataset_code)
+    return parse_account_count_payload(
+        response.json(), account_type=account_type, dataset_code=dataset_code
+    )
 
 
 async def fetch_nominal_balance_observations(
@@ -211,7 +228,9 @@ async def fetch_nominal_balance_observations(
         timeout=30,
     )
     response.raise_for_status()
-    return parse_nominal_balance_payload(response.json(), account_type=account_type, dataset_code=dataset_code)
+    return parse_nominal_balance_payload(
+        response.json(), account_type=account_type, dataset_code=dataset_code
+    )
 
 
 async def fetch_checking_accounts_batch(
@@ -247,18 +266,23 @@ async def fetch_checking_accounts_batch(
     )
 
     latest_account_count_source_month = max(
-        (observation.period_month for observation in account_count_observations), default=None
+        (observation.period_month for observation in account_count_observations),
+        default=None,
     )
     latest_nominal_balance_source_month = max(
-        (observation.period_month for observation in nominal_balance_observations), default=None
+        (observation.period_month for observation in nominal_balance_observations),
+        default=None,
     )
     latest_source_month = max(
-        (latest_account_count_source_month, latest_nominal_balance_source_month), default=None
+        (latest_account_count_source_month, latest_nominal_balance_source_month),
+        default=None,
     )
     return CheckingAccountsObservationBatch(
         raw_observations=raw_observations,
         latest_source_month=latest_source_month,
-        earliest_source_month=min((observation.period_month for observation in raw_observations), default=None),
+        earliest_source_month=min(
+            (observation.period_month for observation in raw_observations), default=None
+        ),
         latest_account_count_source_month=latest_account_count_source_month,
         latest_nominal_balance_source_month=latest_nominal_balance_source_month,
     )

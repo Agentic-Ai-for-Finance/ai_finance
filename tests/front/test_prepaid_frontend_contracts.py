@@ -29,9 +29,10 @@ def test_prepaid_queries_use_api_proxy_routes():
 
 def test_prepaid_routes_and_shell_wiring_exist():
     page_src = Path("front/app/prepaid-cards/page.tsx").read_text()
-    dynamic_src = Path("front/app/prepaid-cards/[customerType]/[operation]/page.tsx").read_text()
+    dynamic_src = Path(
+        "front/app/prepaid-cards/[customerType]/[operation]/page.tsx"
+    ).read_text()
     shell_src = Path("front/components/app-shell.tsx").read_text()
-    sidebar_src = Path("front/components/prepaid-card-sidebar.tsx").read_text()
     nav_src = Path("front/lib/credit-card-config.ts").read_text()
 
     assert 'section="prepaid-cards"' in page_src
@@ -39,6 +40,8 @@ def test_prepaid_routes_and_shell_wiring_exist():
     assert "customerTypeFromSlug" in dynamic_src
     assert "PrepaidCardsDashboard" in dynamic_src
     assert "PrepaidCardSidebar" in shell_src
-    assert 'slug: "natural-person"' in Path("front/lib/prepaid-card-config.ts").read_text()
+    assert (
+        'slug: "natural-person"' in Path("front/lib/prepaid-card-config.ts").read_text()
+    )
     assert 'slug: "business"' in Path("front/lib/prepaid-card-config.ts").read_text()
-    assert '/prepaid-cards' in nav_src
+    assert "/prepaid-cards" in nav_src

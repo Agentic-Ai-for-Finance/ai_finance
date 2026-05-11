@@ -75,7 +75,9 @@ def test_to_curated_bank_credit_card_ops_propagates_missing_uf_failure():
         raise ValueError("Missing UF value")
 
     with pytest.raises(ValueError, match="Missing UF value"):
-        to_curated_bank_credit_card_ops([_raw_observation()], uf_lookup=missing_uf_lookup)
+        to_curated_bank_credit_card_ops(
+            [_raw_observation()], uf_lookup=missing_uf_lookup
+        )
 
 
 def test_to_curated_bank_credit_card_ops_keeps_operation_metadata():
@@ -106,9 +108,11 @@ def test_to_curated_bank_credit_card_ops_adds_operations_per_active_card():
     curated = to_curated_bank_credit_card_ops(
         [_raw_observation()],
         uf_lookup=lambda _uf_date: Decimal("40000"),
-        active_cards_lookup=lambda institution_code, period_month: Decimal("500")
-        if institution_code == "BICE" and period_month == date(2026, 4, 1)
-        else None,
+        active_cards_lookup=lambda institution_code, period_month: (
+            Decimal("500")
+            if institution_code == "BICE" and period_month == date(2026, 4, 1)
+            else None
+        ),
     )
 
     assert curated[0].total_active_cards == Decimal("500")

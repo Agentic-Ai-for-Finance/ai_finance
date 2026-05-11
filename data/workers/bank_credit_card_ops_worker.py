@@ -25,16 +25,10 @@ from data.loaders.bank_credit_card_ops_sync_state_loader import (
     record_sync_success,
 )
 from data.models.bank_credit_card_operations import (
-    BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET,
-    BANK_CREDIT_CARD_ACTIVE_CARDS_NON_BANKING_DATASET,
-    BANK_CREDIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DATASET,
     BANK_CREDIT_CARD_OPERATION_AVANCE_EN_EFECTIVO,
     BANK_CREDIT_CARD_OPERATION_CARGOS_POR_SERVICIO,
     BANK_CREDIT_CARD_OPERATION_COMPRAS_NON_BANKING,
     BANK_CREDIT_CARD_OPERATION_COMPRAS,
-    BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_PRIMARY_DATASET,
-    BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_NON_BANKING_DATASET,
-    BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_SUPPLEMENTARY_DATASET,
     BANK_CREDIT_CARD_COUNTS_DATASET,
     BANK_CREDIT_CARD_OPS_AVANCE_EN_EFECTIVO_DATASET,
     BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_DATASET,
@@ -68,6 +62,7 @@ DEFAULT_CMF_ENDPOINT_BASE = "https://best-sbif-api.azurewebsites.net/Cuadrosv2"
 
 log = logging.getLogger("bank-credit-card-ops-worker")
 
+
 @dataclass(frozen=True)
 class BankCreditCardOpsWorkerConfig:
     supabase_url: str
@@ -81,7 +76,9 @@ def load_config() -> BankCreditCardOpsWorkerConfig:
     return BankCreditCardOpsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
-        endpoint_base=os.environ.get("BASE_ENDPOINT_CMF_CARDS", DEFAULT_CMF_ENDPOINT_BASE),
+        endpoint_base=os.environ.get(
+            "BASE_ENDPOINT_CMF_CARDS", DEFAULT_CMF_ENDPOINT_BASE
+        ),
     )
 
 
@@ -116,7 +113,11 @@ def load_active_operation_configs(sb) -> list[BankCreditCardOperationConfig]:
         BANK_CREDIT_CARD_OPERATION_CARGOS_POR_SERVICIO,
     }
     for row in response.data or []:
-        if not row.get("operation_type") or not row.get("measure_kind") or not row.get("source_tag"):
+        if (
+            not row.get("operation_type")
+            or not row.get("measure_kind")
+            or not row.get("source_tag")
+        ):
             continue
         if row["operation_type"] not in supported_operations:
             continue
@@ -128,7 +129,9 @@ def load_active_operation_configs(sb) -> list[BankCreditCardOperationConfig]:
 
     operations: list[BankCreditCardOperationConfig] = []
     for operation_type, endpoint_group in endpoints_by_operation.items():
-        transaction_count_endpoint = endpoint_group.get(CMF_MEASURE_KIND_TRANSACTION_COUNT)
+        transaction_count_endpoint = endpoint_group.get(
+            CMF_MEASURE_KIND_TRANSACTION_COUNT
+        )
         nominal_volume_endpoint = endpoint_group.get(CMF_MEASURE_KIND_NOMINAL_VOLUME)
         if transaction_count_endpoint is None or nominal_volume_endpoint is None:
             continue
@@ -182,7 +185,9 @@ def load_active_card_counts_config(sb) -> BankCreditCardCountsConfig | None:
                 "measure_kind": row["measure_kind"],
                 "source_tag": row["source_tag"],
                 "source_nombre": row.get("source_nombre", row["dataset_code"]),
-                "source_description": row.get("source_description", row["dataset_code"]),
+                "source_description": row.get(
+                    "source_description", row["dataset_code"]
+                ),
                 "source_endpoint_base": row["source_endpoint_base"],
                 "refresh_frequency": row["refresh_frequency"],
                 "start_date": row["start_date"],
@@ -252,7 +257,9 @@ def load_active_card_counts_config(sb) -> BankCreditCardCountsConfig | None:
     )
 
 
-def latest_observation_month(observations: list[BankCreditCardOpsRawObservation]) -> date | None:
+def latest_observation_month(
+    observations: list[BankCreditCardOpsRawObservation],
+) -> date | None:
     if not observations:
         return None
 
@@ -278,9 +285,9 @@ def build_active_cards_lookup(sb):
         for row in rows:
             if row.get("total_active_cards") is None:
                 continue
-            totals[(row["institution_code"], date.fromisoformat(row["period_month"]))] = Decimal(
-                str(row["total_active_cards"])
-            )
+            totals[
+                (row["institution_code"], date.fromisoformat(row["period_month"]))
+            ] = Decimal(str(row["total_active_cards"]))
 
         if len(rows) < page_size:
             break
@@ -332,22 +339,23 @@ async def sync_operation_once(
                 <= latest_transaction_count_state_month
             )
         )
-        nominal_volume_unchanged = (
-            batch.latest_nominal_volume_source_month is None
-            or (
-                latest_nominal_volume_state_month is not None
-                and batch.latest_nominal_volume_source_month <= latest_nominal_volume_state_month
-            )
+        nominal_volume_unchanged = batch.latest_nominal_volume_source_month is None or (
+            latest_nominal_volume_state_month is not None
+            and batch.latest_nominal_volume_source_month
+            <= latest_nominal_volume_state_month
         )
-        history_is_complete = (
-            batch.earliest_source_month is None
-            or (
-                earliest_curated_month is not None
-                and earliest_curated_month <= batch.earliest_source_month
-            )
+        history_is_complete = batch.earliest_source_month is None or (
+            earliest_curated_month is not None
+            and earliest_curated_month <= batch.earliest_source_month
         )
-        if transaction_count_unchanged and nominal_volume_unchanged and history_is_complete:
-            log.info("Skipping %s: latest source month is unchanged.", config.dataset_code)
+        if (
+            transaction_count_unchanged
+            and nominal_volume_unchanged
+            and history_is_complete
+        ):
+            log.info(
+                "Skipping %s: latest source month is unchanged.", config.dataset_code
+            )
             return 0
 
         curated_observations = to_curated_bank_credit_card_ops(
@@ -358,8 +366,12 @@ async def sync_operation_once(
         upsert_bank_credit_card_ops_raw(sb, batch.raw_observations)
         upsert_bank_credit_card_ops_curated(sb, curated_observations)
     except Exception as exc:
-        record_sync_failure(sb, dataset_code=config.transaction_count_dataset_code, error=exc)
-        record_sync_failure(sb, dataset_code=config.nominal_volume_dataset_code, error=exc)
+        record_sync_failure(
+            sb, dataset_code=config.transaction_count_dataset_code, error=exc
+        )
+        record_sync_failure(
+            sb, dataset_code=config.nominal_volume_dataset_code, error=exc
+        )
         raise
 
     record_sync_success(
@@ -372,7 +384,8 @@ async def sync_operation_once(
     record_sync_success(
         sb,
         dataset_code=config.nominal_volume_dataset_code,
-        latest_source_month=batch.latest_nominal_volume_source_month or batch.latest_source_month,
+        latest_source_month=batch.latest_nominal_volume_source_month
+        or batch.latest_source_month,
         latest_curated_month=batch.latest_source_month,
     )
     return len(batch.raw_observations)
@@ -419,9 +432,9 @@ async def sync_card_counts_once(
                 batch.latest_active_cards_non_banking_source_month
             )
         if config.cards_with_operations_non_banking_dataset_code:
-            latest_batch_months[config.cards_with_operations_non_banking_dataset_code] = (
-                batch.latest_cards_with_operations_non_banking_source_month
-            )
+            latest_batch_months[
+                config.cards_with_operations_non_banking_dataset_code
+            ] = batch.latest_cards_with_operations_non_banking_source_month
         all_unchanged = True
         for dataset_code, latest_source_month in latest_batch_months.items():
             current_state_month = latest_state_months[dataset_code]
@@ -435,18 +448,19 @@ async def sync_card_counts_once(
             sb,
             dataset_code=config.dataset_code,
         )
-        history_is_complete = (
-            batch.earliest_source_month is None
-            or (
-                earliest_curated_month is not None
-                and earliest_curated_month <= batch.earliest_source_month
-            )
+        history_is_complete = batch.earliest_source_month is None or (
+            earliest_curated_month is not None
+            and earliest_curated_month <= batch.earliest_source_month
         )
         if all_unchanged and history_is_complete:
-            log.info("Skipping %s: latest source month is unchanged.", config.dataset_code)
+            log.info(
+                "Skipping %s: latest source month is unchanged.", config.dataset_code
+            )
             return 0
 
-        curated_observations = to_curated_bank_credit_card_counts(batch.raw_observations)
+        curated_observations = to_curated_bank_credit_card_counts(
+            batch.raw_observations
+        )
         upsert_bank_credit_card_count_raw(sb, batch.raw_observations)
         upsert_bank_credit_card_counts_curated(sb, curated_observations)
     except Exception as exc:
@@ -531,7 +545,9 @@ async def sync_all_bank_credit_card_ops_once(
 
 
 async def run_worker(config: BankCreditCardOpsWorkerConfig | None = None) -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
 
     worker_config = config or load_config()
     sb = create_client(
@@ -549,6 +565,8 @@ async def run_worker(config: BankCreditCardOpsWorkerConfig | None = None) -> Non
                     run_date=date.today(),
                 )
             except Exception as exc:
-                log.warning("Bank credit-card ops sync failed: %s: %s", type(exc).__name__, exc)
+                log.warning(
+                    "Bank credit-card ops sync failed: %s: %s", type(exc).__name__, exc
+                )
 
             await asyncio.sleep(worker_config.sync_interval_s)

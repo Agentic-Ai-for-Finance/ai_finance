@@ -56,7 +56,13 @@ def earliest_curated_card_count_month(sb, *, dataset_code: str) -> date | None:
 
 
 def get_uf_value_for_date(sb, uf_date: date) -> Decimal:
-    response = sb.table("uf_values").select("value").eq("uf_date", uf_date.isoformat()).limit(1).execute()
+    response = (
+        sb.table("uf_values")
+        .select("value")
+        .eq("uf_date", uf_date.isoformat())
+        .limit(1)
+        .execute()
+    )
     if not response.data:
         raise ValueError(f"Missing UF value for {uf_date.isoformat()}")
     return Decimal(str(response.data[0]["value"]))
@@ -67,36 +73,54 @@ def upsert_prepaid_card_ops_raw(sb, observations: list[PrepaidCardOpsRawObservat
         return None
     return (
         sb.table(PREPAID_CARD_OPS_RAW_TABLE)
-        .upsert([observation.to_row() for observation in observations], on_conflict="dataset_code,source_codigo,period_month")
+        .upsert(
+            [observation.to_row() for observation in observations],
+            on_conflict="dataset_code,source_codigo,period_month",
+        )
         .execute()
     )
 
 
-def upsert_prepaid_card_ops_curated(sb, observations: list[PrepaidCardOpsCuratedObservation]):
+def upsert_prepaid_card_ops_curated(
+    sb, observations: list[PrepaidCardOpsCuratedObservation]
+):
     if not observations:
         return None
     return (
         sb.table(PREPAID_CARD_OPS_CURATED_TABLE)
-        .upsert([observation.to_row() for observation in observations], on_conflict="dataset_code,institution_code,period_month")
+        .upsert(
+            [observation.to_row() for observation in observations],
+            on_conflict="dataset_code,institution_code,period_month",
+        )
         .execute()
     )
 
 
-def upsert_prepaid_card_count_raw(sb, observations: list[PrepaidCardCountRawObservation]):
+def upsert_prepaid_card_count_raw(
+    sb, observations: list[PrepaidCardCountRawObservation]
+):
     if not observations:
         return None
     return (
         sb.table(PREPAID_CARD_COUNTS_RAW_TABLE)
-        .upsert([observation.to_row() for observation in observations], on_conflict="dataset_code,source_codigo,period_month")
+        .upsert(
+            [observation.to_row() for observation in observations],
+            on_conflict="dataset_code,source_codigo,period_month",
+        )
         .execute()
     )
 
 
-def upsert_prepaid_card_counts_curated(sb, observations: list[PrepaidCardCountsCuratedObservation]):
+def upsert_prepaid_card_counts_curated(
+    sb, observations: list[PrepaidCardCountsCuratedObservation]
+):
     if not observations:
         return None
     return (
         sb.table(PREPAID_CARD_COUNTS_CURATED_TABLE)
-        .upsert([observation.to_row() for observation in observations], on_conflict="dataset_code,institution_code,period_month")
+        .upsert(
+            [observation.to_row() for observation in observations],
+            on_conflict="dataset_code,institution_code,period_month",
+        )
         .execute()
     )

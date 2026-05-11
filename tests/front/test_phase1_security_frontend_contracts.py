@@ -4,7 +4,8 @@ from pathlib import Path
 def test_phase1_api_route_classification_and_middleware_coverage():
     api_files = sorted(Path("front/app/api/v1").rglob("route.ts"))
     route_paths = [
-        "/" + str(path.relative_to("front/app")).replace("/route.ts", "").replace("\\", "/")
+        "/"
+        + str(path.relative_to("front/app")).replace("/route.ts", "").replace("\\", "/")
         for path in api_files
     ]
     middleware_src = Path("front/middleware.ts").read_text()
@@ -19,11 +20,15 @@ def test_phase1_api_route_classification_and_middleware_coverage():
     public_prefixes = ("/api/v1/public", "/api/v1/auth")
 
     for route in route_paths:
-        assert route.startswith(protected_prefixes + public_prefixes), f"Unclassified API route: {route}"
+        assert route.startswith(protected_prefixes + public_prefixes), (
+            f"Unclassified API route: {route}"
+        )
 
     for prefix in protected_prefixes:
         expected = f'"{prefix}(.*)"'
-        assert expected in middleware_src, f"Middleware missing protected matcher for {prefix}"
+        assert expected in middleware_src, (
+            f"Middleware missing protected matcher for {prefix}"
+        )
 
 
 def test_frontend_layout_and_shell_wire_clerk_auth():
@@ -47,7 +52,9 @@ def test_frontend_dashboard_queries_and_locked_state_follow_phase1_boundary():
     credit_dashboard = Path("front/components/credit-cards-dashboard.tsx").read_text()
     debit_dashboard = Path("front/components/debit-cards-dashboard.tsx").read_text()
     prepaid_dashboard = Path("front/components/prepaid-cards-dashboard.tsx").read_text()
-    checking_dashboard = Path("front/components/checking-accounts-dashboard.tsx").read_text()
+    checking_dashboard = Path(
+        "front/components/checking-accounts-dashboard.tsx"
+    ).read_text()
     states_src = Path("front/components/dashboard-states.tsx").read_text()
 
     assert "/api/v1/public/metrics?dataset=credit-card-ops" in credit_queries
@@ -77,11 +84,11 @@ def test_phase1_api_surface_exists_for_public_protected_and_preferences():
 
     assert "PUBLIC_LIMIT = 300" in public_metrics
     assert 'jsonError(401, "AUTH_REQUIRED"' in protected_metrics
-    assert ".from(\"app_user_profiles\")" in preferences
+    assert '.from("app_user_profiles")' in preferences
     assert "120 months" in analysis
     assert "Only read-only SELECT-style operations are allowed." in analysis
     assert "2-5 entities" in compare
-    assert ".from(\"app_audit_logs\")" in admin_audit
+    assert '.from("app_audit_logs")' in admin_audit
     assert "authEnv" in Path("front/app/api/v1/auth/session/route.ts").read_text()
     metric_api = Path("front/lib/server/metric-api.ts").read_text()
     assert "transaction_count,real_value_uf" in metric_api

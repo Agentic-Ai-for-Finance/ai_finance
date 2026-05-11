@@ -37,9 +37,9 @@ def to_curated_bank_credit_card_ops(
         uf_value = uf_lookup(uf_date)
         nominal_volume_millions_clp = observation.nominal_volume_millions_clp
         real_value_uf = nominal_volume_millions_clp / uf_value
-        average_ticket_uf = (
-            real_value_uf / observation.transaction_count
-        ) * Decimal("1000000")
+        average_ticket_uf = (real_value_uf / observation.transaction_count) * Decimal(
+            "1000000"
+        )
         total_active_cards = (
             active_cards_lookup(observation.institution_code, observation.period_month)
             if active_cards_lookup is not None
@@ -47,11 +47,14 @@ def to_curated_bank_credit_card_ops(
         )
         operations_per_active_card = None
         if total_active_cards not in (None, Decimal("0")):
-            operations_per_active_card = observation.transaction_count / total_active_cards
+            operations_per_active_card = (
+                observation.transaction_count / total_active_cards
+            )
         canonical_operation_type = observation.operation_type
         if (
             observation.operation_type == BANK_CREDIT_CARD_OPERATION_COMPRAS_NON_BANKING
-            or observation.dataset_code == BANK_CREDIT_CARD_OPS_NON_BANKING_COMPRAS_DATASET
+            or observation.dataset_code
+            == BANK_CREDIT_CARD_OPS_NON_BANKING_COMPRAS_DATASET
         ):
             canonical_operation_type = BANK_CREDIT_CARD_OPERATION_COMPRAS
         curated_observations.append(
@@ -104,18 +107,32 @@ def to_curated_bank_credit_card_counts(
 
         if observation.dataset_code == BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET:
             row["active_cards_primary"] = observation.card_count
-        elif observation.dataset_code == BANK_CREDIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DATASET:
+        elif (
+            observation.dataset_code
+            == BANK_CREDIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DATASET
+        ):
             row["active_cards_supplementary"] = observation.card_count
-        elif observation.dataset_code == BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_PRIMARY_DATASET:
+        elif (
+            observation.dataset_code
+            == BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_PRIMARY_DATASET
+        ):
             row["cards_with_operations_primary"] = observation.card_count
         elif (
             observation.dataset_code
             == BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_SUPPLEMENTARY_DATASET
         ):
             row["cards_with_operations_supplementary"] = observation.card_count
-        elif observation.dataset_code == BANK_CREDIT_CARD_ACTIVE_CARDS_NON_BANKING_DATASET:
-            row["active_cards_primary"] = row["active_cards_primary"] + observation.card_count
-        elif observation.dataset_code == BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_NON_BANKING_DATASET:
+        elif (
+            observation.dataset_code
+            == BANK_CREDIT_CARD_ACTIVE_CARDS_NON_BANKING_DATASET
+        ):
+            row["active_cards_primary"] = (
+                row["active_cards_primary"] + observation.card_count
+            )
+        elif (
+            observation.dataset_code
+            == BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_NON_BANKING_DATASET
+        ):
             row["cards_with_operations_primary"] = (
                 row["cards_with_operations_primary"] + observation.card_count
             )

@@ -18,7 +18,9 @@ from data.sources.prepaid_card_operations import (
 )
 
 
-def _payload(*, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]):
+def _payload(
+    *, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]
+):
     return {
         "series": [
             {
@@ -47,7 +49,10 @@ def test_build_cmf_cuadros_url_for_prepaid_endpoint():
 
 
 def test_prepaid_source_helpers_normalize_common_shapes():
-    assert derive_institution_code("CMF_TPREP_NBANC_TX_NAT_COMP_AGIFI_TENPO_NUM_MONT") == "TENPO"
+    assert (
+        derive_institution_code("CMF_TPREP_NBANC_TX_NAT_COMP_AGIFI_TENPO_NUM_MONT")
+        == "TENPO"
+    )
     assert parse_cmf_numeric("1.234,50") == Decimal("1234.50")
     assert normalize_period_month("202602") == date(2026, 2, 1)
 

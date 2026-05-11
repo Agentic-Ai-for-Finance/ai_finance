@@ -82,7 +82,9 @@ class FakeTable:
 
 
 class FakeSupabase:
-    def __init__(self, latest_curated=None, uf_values=None, curated=None, count_curated=None):
+    def __init__(
+        self, latest_curated=None, uf_values=None, curated=None, count_curated=None
+    ):
         self.db = {
             "latest_curated": latest_curated or [],
             "uf_values": uf_values or {},
@@ -174,32 +176,25 @@ def test_latest_curated_operation_month_returns_none_for_empty_table():
 def test_latest_curated_operation_month_reads_latest_row():
     sb = FakeSupabase(latest_curated=[{"period_month": "2026-04-01"}])
 
-    assert (
-        latest_curated_operation_month(
-            sb, dataset_code=BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
-        )
-        == date(2026, 4, 1)
-    )
+    assert latest_curated_operation_month(
+        sb, dataset_code=BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
+    ) == date(2026, 4, 1)
 
 
 def test_earliest_curated_operation_month_reads_first_row():
     sb = FakeSupabase(curated=[{"period_month": "2025-01-01"}])
 
-    assert (
-        earliest_curated_operation_month(
-            sb, dataset_code=BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
-        )
-        == date(2025, 1, 1)
-    )
+    assert earliest_curated_operation_month(
+        sb, dataset_code=BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
+    ) == date(2025, 1, 1)
 
 
 def test_earliest_curated_card_count_month_reads_first_row():
     sb = FakeSupabase(count_curated=[{"period_month": "2024-01-01"}])
 
-    assert (
-        earliest_curated_card_count_month(sb, dataset_code=BANK_DEBIT_CARD_COUNTS_DATASET)
-        == date(2024, 1, 1)
-    )
+    assert earliest_curated_card_count_month(
+        sb, dataset_code=BANK_DEBIT_CARD_COUNTS_DATASET
+    ) == date(2024, 1, 1)
 
 
 def test_get_uf_value_for_date_returns_decimal_value():

@@ -22,7 +22,9 @@ def latest_stored_uf_date(sb) -> date | None:
     return date.fromisoformat(response.data[0]["uf_date"])
 
 
-def new_uf_values(source_values: list[UfValue], latest_stored_date: date | None) -> list[UfValue]:
+def new_uf_values(
+    source_values: list[UfValue], latest_stored_date: date | None
+) -> list[UfValue]:
     if latest_stored_date is None:
         return source_values
 

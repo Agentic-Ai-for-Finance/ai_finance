@@ -1,0 +1,43 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.11
+    hooks:
+      - id: ruff-check
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: detect-private-key
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend lint
+        entry: bash -c 'cd front && npm run lint'
+        language: system
+        pass_filenames: false
+
+      - id: block-env-files
+        name: Block .env-like files in commits
+        entry: bash scripts/check_no_env_staged.sh
+        language: system
+        pass_filenames: false
+
+      - id: block-gitignored-staged
+        name: Block staged files matching .gitignore
+        entry: bash scripts/check_no_gitignored_staged.sh
+        language: system
+        pass_filenames: false
