@@ -1,0 +1,5 @@
+[allowlist]
+description = "Allow detect-secrets baseline artifacts"
+paths = [
+  '''^\.secrets\.baseline$''',
+]

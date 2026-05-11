@@ -75,8 +75,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: false
-        with:
-          args: --redact --verbose --log-opts="${{ github.event.before }}..${{ github.sha }}"
 
       - name: Setup Python 3.13
         uses: actions/setup-python@v5
