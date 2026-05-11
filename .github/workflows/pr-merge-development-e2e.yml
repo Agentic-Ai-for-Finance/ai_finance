@@ -87,6 +87,14 @@ jobs:
 
           echo "No changed files match .gitignore."
 
+      - name: Scan commit range for secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+        with:
+          args: --redact --verbose --log-opts="origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}"
+
       - name: Setup Python 3.13
         uses: actions/setup-python@v5
         with:
@@ -97,6 +105,9 @@ jobs:
 
       - name: Sync Python dependencies
         run: uv sync --frozen
+
+      - name: Ruff check
+        run: uv run ruff check .
 
       - name: Run full Python test suite (gate)
         run: uv run pytest -q
@@ -111,6 +122,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: front
         run: npm ci
+
+      - name: Lint frontend
+        working-directory: front
+        run: npm run lint
 
       - name: Build frontend
         working-directory: front
@@ -181,6 +196,14 @@ jobs:
 
           echo "No changed files match .gitignore."
 
+      - name: Scan commit range for secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+        with:
+          args: --redact --verbose --log-opts="${{ github.event.before }}..${{ github.sha }}"
+
       - name: Setup Python 3.13
         uses: actions/setup-python@v5
         with:
@@ -191,6 +214,9 @@ jobs:
 
       - name: Sync Python dependencies
         run: uv sync --frozen
+
+      - name: Ruff check
+        run: uv run ruff check .
 
       - name: Run Python smoke contract/security suite
         run: >
@@ -211,6 +237,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: front
         run: npm ci
+
+      - name: Lint frontend
+        working-directory: front
+        run: npm run lint
 
       - name: Build frontend
         working-directory: front
