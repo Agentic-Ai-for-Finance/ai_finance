@@ -1,0 +1,135 @@
+name: PR Merge Development E2E
+
+on:
+  pull_request:
+    branches:
+      - development
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - development
+
+concurrency:
+  group: pr-merge-development-e2e-${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  pr_full_gate:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 60
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      ADMIN_EMAIL_ALLOWLIST: ${{ secrets.ADMIN_EMAIL_ALLOWLIST }}
+      CMF_API_KEY: ${{ secrets.CMF_API_KEY }}
+      BASE_ENDPOINT_CMF_UF: ${{ secrets.BASE_ENDPOINT_CMF_UF }}
+      BASE_ENDPOINT_CMF_CARDS: ${{ secrets.BASE_ENDPOINT_CMF_CARDS }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync Python dependencies
+        run: uv sync --frozen
+
+      - name: Run full Python test suite (gate)
+        run: uv run pytest -q
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: front
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: front
+        run: npm run build
+
+      - name: Cleanup temporary build artifacts
+        if: always()
+        run: |
+          rm -rf .pytest_cache
+          rm -rf front/.next/cache
+
+  push_smoke:
+    if: ${{ github.event_name == 'push' && github.ref_name == 'development' }}
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 45
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      ADMIN_EMAIL_ALLOWLIST: ${{ secrets.ADMIN_EMAIL_ALLOWLIST }}
+      CMF_API_KEY: ${{ secrets.CMF_API_KEY }}
+      BASE_ENDPOINT_CMF_UF: ${{ secrets.BASE_ENDPOINT_CMF_UF }}
+      BASE_ENDPOINT_CMF_CARDS: ${{ secrets.BASE_ENDPOINT_CMF_CARDS }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync Python dependencies
+        run: uv sync --frozen
+
+      - name: Run Python smoke contract/security suite
+        run: >
+          uv run pytest -q
+          tests/front/test_phase1_security_frontend_contracts.py
+          tests/front/test_debit_frontend_contracts.py
+          tests/front/test_prepaid_frontend_contracts.py
+          tests/front/test_checking_accounts_frontend_contracts.py
+          tests/db/test_phase1_security_sql.py
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: front
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: front
+        run: npm run build
+
+      - name: Cleanup temporary build artifacts
+        if: always()
+        run: |
+          rm -rf .pytest_cache
+          rm -rf front/.next/cache
