@@ -5,9 +5,23 @@ on:
     branches:
       - development
     types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - AGENTS.md
+      - README.md
+      - plans/**
+      - descriptions/**
+      - front/prototypes/**
+      - .DS_Store
   push:
     branches:
       - development
+    paths-ignore:
+      - AGENTS.md
+      - README.md
+      - plans/**
+      - descriptions/**
+      - front/prototypes/**
+      - .DS_Store
 
 concurrency:
   group: pr-merge-development-e2e-${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
@@ -35,6 +49,43 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if changed files are ignored by .gitignore
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            git fetch --no-tags --prune --depth=1 origin "${GITHUB_BASE_REF}"
+            DIFF_BASE="origin/${GITHUB_BASE_REF}"
+            DIFF_HEAD="HEAD"
+          else
+            DIFF_BASE="${{ github.event.before }}"
+            DIFF_HEAD="${{ github.sha }}"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "${DIFF_BASE}" "${DIFF_HEAD}")
+          if [[ -z "${CHANGED_FILES}" ]]; then
+            echo "No changed files detected."
+            exit 0
+          fi
+
+          BAD_FILES=()
+          while IFS= read -r path; do
+            [[ -z "${path}" ]] && continue
+            if git check-ignore -q "${path}"; then
+              BAD_FILES+=("${path}")
+            fi
+          done <<< "${CHANGED_FILES}"
+
+          if (( ${#BAD_FILES[@]} > 0 )); then
+            echo "Found changed tracked files that match .gitignore:"
+            printf ' - %s\n' "${BAD_FILES[@]}"
+            exit 1
+          fi
+
+          echo "No changed files match .gitignore."
 
       - name: Setup Python 3.13
         uses: actions/setup-python@v5
@@ -92,6 +143,43 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if changed files are ignored by .gitignore
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            git fetch --no-tags --prune --depth=1 origin "${GITHUB_BASE_REF}"
+            DIFF_BASE="origin/${GITHUB_BASE_REF}"
+            DIFF_HEAD="HEAD"
+          else
+            DIFF_BASE="${{ github.event.before }}"
+            DIFF_HEAD="${{ github.sha }}"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "${DIFF_BASE}" "${DIFF_HEAD}")
+          if [[ -z "${CHANGED_FILES}" ]]; then
+            echo "No changed files detected."
+            exit 0
+          fi
+
+          BAD_FILES=()
+          while IFS= read -r path; do
+            [[ -z "${path}" ]] && continue
+            if git check-ignore -q "${path}"; then
+              BAD_FILES+=("${path}")
+            fi
+          done <<< "${CHANGED_FILES}"
+
+          if (( ${#BAD_FILES[@]} > 0 )); then
+            echo "Found changed tracked files that match .gitignore:"
+            printf ' - %s\n' "${BAD_FILES[@]}"
+            exit 1
+          fi
+
+          echo "No changed files match .gitignore."
 
       - name: Setup Python 3.13
         uses: actions/setup-python@v5
