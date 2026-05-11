@@ -660,27 +660,55 @@ Frontend data access:
   - repo-root `package.json`
   - repo-root `package-lock.json`
 
-# Session Handoff (CI Workflow: PR Gate + Push Smoke)
+# Session Handoff (Current CI + Commit Gates)
 
 - Date: 2026-05-11.
-- New workflow added at `.github/workflows/pr-merge-development-e2e.yml`.
-- Trigger model:
-  - `pull_request` targeting `development` (`opened`, `synchronize`, `reopened`, `ready_for_review`)
-  - `push` to `development`
-- Job split:
-  - `pr_full_gate` (PR only, non-draft): full Python test suite (`uv run pytest -q`) + frontend build.
-  - `push_smoke` (push only): targeted frontend/security contracts + DB phase-1 security SQL test + frontend build.
+- Active workflow set:
+  - `.github/workflows/pr-merge-development-e2e.yml`
+  - `.github/workflows/development-feature-fast-feedback.yml`
+  - `.github/workflows/main-merge-gate.yml`
+- Trigger matrix:
+  - `pull_request` -> `development`: `pr_full_gate` (non-draft)
+  - `push` -> `development`: `push_smoke`
+  - `push` -> `development-*`: `feature_push_fast_feedback`
+  - `pull_request` -> `main`: `main_pr_full_gate` (non-draft)
+- CI checks now standardized across workflows:
+  - changed-files guardrail against `.gitignore` matches
+  - `gitleaks` secret scan
+  - `uv run ruff check .`
+  - frontend lint + build
+  - Python tests (full suite on strict gates; targeted suite on smoke/fast-feedback gates)
 - Environment/secrets model:
-  - both jobs run with `environment: development`
-  - Supabase variables are expected from environment secrets
-  - non-Supabase variables remain from repository secrets
-- Non-code skip behavior:
-  - both triggers use `paths-ignore` for:
-    - `AGENTS.md`
-    - `README.md`
-    - `plans/**`
-    - `descriptions/**`
-    - `front/prototypes/**`
-    - `.DS_Store`
-- Guardrail:
-  - both jobs include a changed-files validation step that fails CI if any changed tracked file matches `.gitignore` patterns.
+  - `development` workflows use `environment: development`
+  - `main` merge gate uses `environment: production`
+  - Supabase values come from environment secrets; non-Supabase values come from repository secrets
+- Non-code skip behavior (`paths-ignore`) is applied for:
+  - `AGENTS.md`, `README.md`, `plans/**`, `descriptions/**`, `front/prototypes/**`, `.DS_Store`
+- Gitleaks stability note:
+  - unsupported `with.args` usage was removed from `gitleaks/gitleaks-action@v2`
+  - `.gitleaks.toml` allowlists `.secrets.baseline` to avoid baseline false positives
+
+# Session Handoff (Pre-commit Enforcement)
+
+- Date: 2026-05-11.
+- Pre-commit assets:
+  - `.pre-commit-config.yaml`
+  - `.secrets.baseline`
+  - `.gitleaks.toml`
+  - `scripts/check_no_env_staged.sh`
+  - `scripts/check_no_gitignored_staged.sh`
+  - `front/.eslintrc.json` (non-interactive frontend lint)
+- Local pre-commit gates:
+  - `ruff check --fix`
+  - `ruff format`
+  - `detect-private-key`
+  - `detect-secrets --baseline .secrets.baseline`
+  - `check-merge-conflict`
+  - `check-added-large-files` (1MB)
+  - `end-of-file-fixer`
+  - `trailing-whitespace`
+  - frontend lint (`cd front && npm run lint`)
+  - block staged `.env`-like files
+  - block staged files matching `.gitignore`
+- Implementation note:
+  - frontend optional-auth helper uses an inline ESLint suppression for Clerk-disabled conditional fallback (`front/lib/clerk-compat.tsx`).
