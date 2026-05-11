@@ -659,3 +659,28 @@ Frontend data access:
   - `front/prototypes/`
   - repo-root `package.json`
   - repo-root `package-lock.json`
+
+# Session Handoff (CI Workflow: PR Gate + Push Smoke)
+
+- Date: 2026-05-11.
+- New workflow added at `.github/workflows/pr-merge-development-e2e.yml`.
+- Trigger model:
+  - `pull_request` targeting `development` (`opened`, `synchronize`, `reopened`, `ready_for_review`)
+  - `push` to `development`
+- Job split:
+  - `pr_full_gate` (PR only, non-draft): full Python test suite (`uv run pytest -q`) + frontend build.
+  - `push_smoke` (push only): targeted frontend/security contracts + DB phase-1 security SQL test + frontend build.
+- Environment/secrets model:
+  - both jobs run with `environment: development`
+  - Supabase variables are expected from environment secrets
+  - non-Supabase variables remain from repository secrets
+- Non-code skip behavior:
+  - both triggers use `paths-ignore` for:
+    - `AGENTS.md`
+    - `README.md`
+    - `plans/**`
+    - `descriptions/**`
+    - `front/prototypes/**`
+    - `.DS_Store`
+- Guardrail:
+  - both jobs include a changed-files validation step that fails CI if any changed tracked file matches `.gitignore` patterns.
