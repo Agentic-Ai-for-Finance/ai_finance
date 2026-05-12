@@ -10,11 +10,11 @@ import {
 } from "@/lib/clerk-compat";
 
 const NAV = [
-  { label: "Credit Cards", href: "/credit-cards", sectionId: "credit" },
-  { label: "Debit Cards", href: "/debit-cards", sectionId: "debit" },
-  { label: "Prepaid Cards", href: "/prepaid-cards", sectionId: "prepaid" },
-  { label: "Checking Accounts", href: "/checking-accounts", sectionId: "checking" },
-  { label: "Loans", href: "/loans", sectionId: "loans" },
+  { label: "Credit Cards", href: "/credit-cards" },
+  { label: "Debit Cards", href: "/debit-cards" },
+  { label: "Prepaid Cards", href: "/prepaid-cards" },
+  { label: "Checking Accounts", href: "/checking-accounts" },
+  { label: "Loans", href: "/loans" },
 ] as const;
 
 const TICKER = [
@@ -116,13 +116,13 @@ function HomeNav() {
         </Link>
         <nav className="hidden items-center gap-7 md:flex">
           {NAV.map((item) => (
-            <a
+            <Link
               key={item.label}
-              href={`#${item.sectionId}`}
+              href={item.href}
               className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--home-muted)] transition-colors hover:text-[var(--home-foreground)]"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="hidden md:block">
