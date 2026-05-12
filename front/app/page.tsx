@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { HomepagePrototype } from "@/components/homepage-prototype";
 
 export default function HomePage() {
-  redirect("/credit-cards/purchases?view=volume");
+  return <HomepagePrototype />;
 }
