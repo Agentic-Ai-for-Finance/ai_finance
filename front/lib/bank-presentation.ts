@@ -28,6 +28,33 @@ export const bankDisplayNameMap: Record<string, string> = {
   "Tenpo Payments S.A. - Tarjeta Mastercard": "Tenpo",
 };
 
+const CORPORATE_BANK_COLORS: Record<string, string> = {
+  "Líder BCI": "#0053E1",
+  Unicard: "#683DF2",
+  Scotiabank: "#EC111A",
+  BBVA: "#EC111A",
+  Consorcio: "#003058",
+  "Tarjeta Consorcio": "#003058",
+  "Banco Estado": "#FF7900",
+  "Banco de Chile": "#002884",
+  "Banco París": "#006DFF",
+  "Cencosud Scotiabank": "#0E2536",
+  "Banco Ripley": "#523178",
+  CMF_RIPLEY: "#523178",
+  HSBC: "#DB0011",
+  "CMR Falabella": "#3B9326",
+  "Banco Falabella": "#3B9326",
+  CMF_FALABELLA: "#3B9326",
+  BCI: "#FFD200",
+  "Banco Itaú": "#EC7000",
+  Corpbanca: "#EC7000",
+  "Banco Internacional": "#D90D39",
+  "Banco Santander": "#EC0000",
+  Coopeuch: "#F42534",
+  "Banco Security": "#6A2E92",
+  "Banco BICE": "#1976D2",
+};
+
 const FALABELLA_RAW_NAMES = new Set([
   "CMR Falabella S.A (SAG)",
   "Promotora CMR Falabella S.A. - Tarjeta CMR Falabella",
@@ -111,7 +138,7 @@ export function shouldIncludeInstitution(
   return !isNonBanking || isTenpoInstitution(institutionName);
 }
 
-export function getBankColor(bankKey: string): string {
+function getHashedBankColor(bankKey: string): string {
   let hash = 0;
 
   for (let index = 0; index < bankKey.length; index += 1) {
@@ -120,4 +147,22 @@ export function getBankColor(bankKey: string): string {
 
   const hue = hash % 360;
   return `hsl(${hue} 72% 64%)`;
+}
+
+export function getBankColor(
+  institutionCode: string,
+  institutionName: string
+): string {
+  const canonicalInstitution = getCanonicalInstitution(
+    institutionName,
+    institutionCode
+  );
+
+  return (
+    CORPORATE_BANK_COLORS[canonicalInstitution.institutionCode] ??
+    CORPORATE_BANK_COLORS[canonicalInstitution.institutionName] ??
+    CORPORATE_BANK_COLORS[institutionCode] ??
+    CORPORATE_BANK_COLORS[getBankDisplayName(institutionName)] ??
+    getHashedBankColor(institutionCode)
+  );
 }

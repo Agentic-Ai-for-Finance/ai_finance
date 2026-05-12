@@ -169,7 +169,10 @@ export function MetricLineChart({
                 const barY = padding.top + index * barRowHeight + 10;
                 const barValueWidth = 120;
                 const barWidth = (value / barMaxValue) * (chartWidth - barValueWidth);
-                const color = getBankColor(bank.institutionCode);
+                const color = getBankColor(
+                  bank.institutionCode,
+                  bank.institutionName
+                );
                 const labelX = padding.left + barWidth + 12;
                 const totalValue = monthTotals[months[0]] || 0;
                 const systemShare = totalValue > 0 ? (value / totalValue) * 100 : null;
@@ -252,7 +255,10 @@ export function MetricLineChart({
               })}
 
               {series.map((bank) => {
-                const color = getBankColor(bank.institutionCode);
+                const color = getBankColor(
+                  bank.institutionCode,
+                  bank.institutionName
+                );
                 const segments: string[] = [];
                 let activeSegment = "";
 
@@ -353,7 +359,15 @@ export function MetricLineChart({
       <div className="flex flex-wrap gap-3">
         {series.map((bank) => (
           <div key={bank.institutionCode} className="flex items-center gap-2 rounded-full border border-border bg-panelMuted px-3 py-2 text-xs text-white">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getBankColor(bank.institutionCode) }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor: getBankColor(
+                  bank.institutionCode,
+                  bank.institutionName
+                ),
+              }}
+            />
             <span>{bank.institutionName}</span>
           </div>
         ))}

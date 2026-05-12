@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Taclaro",
-  description: "Credit-card analytics demo for Taclaro",
+  description: "Banking analytics and benchmark interface for Taclaro.",
 };
 
 export default function RootLayout({

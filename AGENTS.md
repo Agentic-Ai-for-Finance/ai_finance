@@ -383,6 +383,16 @@ Current shell/UI constraints:
 - Loans page remains a placeholder and currently renders a minimal italic `Soon` welcome message.
 - Chart tooltips should stay inside viewport bounds on small screens.
 - Summary table may use local horizontal overflow as a safety fallback, but should use compact spacing on small screens before overflow is needed.
+- Shared Taclaro UI surfaces such as the home page, top-level shell, and product marketing/prototype sections should use the Taclaro corporate palette rather than ad-hoc colors:
+  - background `#121c2d`
+  - foreground `#f6f8fc`
+  - surface `#162235`
+  - rule/border `#31435d`
+  - primary mint `#91f2cf`
+  - accent pink `#f09ab1`
+  - accent amber `#f2d77b`
+  - muted text `#a8b4ca`
+- Bank colors should use the curated palette in `mappings/bank-main-colors-current.txt` for any shared UI that renders bank identity, with the existing hash fallback only for unmapped institutions.
 
 Credit-card behavior:
 

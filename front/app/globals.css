@@ -4,6 +4,17 @@
 
 :root {
   color-scheme: dark;
+  --home-background: #121c2d;
+  --home-foreground: #f6f8fc;
+  --home-surface: #162235;
+  --home-rule: #31435d;
+  --home-mint: #91f2cf;
+  --home-pink: #f09ab1;
+  --home-amber: #f2d77b;
+  --home-muted: #a8b4ca;
+  --font-home-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-home-sans: "Aptos", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-home-mono: "SFMono-Regular", "Menlo", "Monaco", "Liberation Mono", monospace;
 }
 
 body {
@@ -16,4 +27,56 @@ body {
 
 input[type="month"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
+}
+
+.home-grid-glow {
+  background:
+    radial-gradient(circle at top left, rgb(145 242 207 / 0.12), transparent 28%),
+    linear-gradient(rgb(255 255 255 / 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+  background-size: auto, 100% 48px, 48px 100%;
+}
+
+.home-ticker {
+  animation: home-ticker-scroll 40s linear infinite;
+}
+
+.home-draw-line {
+  stroke-dasharray: 1200;
+  animation: home-draw-line 3s ease-out forwards;
+}
+
+.home-pulse-dot {
+  animation: home-pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes home-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes home-draw-line {
+  from {
+    stroke-dashoffset: 1200;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes home-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
 }
