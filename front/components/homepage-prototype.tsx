@@ -9,6 +9,7 @@ import {
   OptionalUserButton,
 } from "@/lib/clerk-compat";
 
+// Main navigation links point to the existing category landing pages.
 const NAV = [
   { label: "Credit Cards", href: "/credit-cards" },
   { label: "Debit Cards", href: "/debit-cards" },
