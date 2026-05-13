@@ -2,41 +2,23 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { checkingAccountOperations } from "@/lib/checking-account-config";
+import { creditCardOperations } from "@/lib/credit-card-config";
 import {
   OptionalSignInButton,
   OptionalSignedIn,
   OptionalSignedOut,
   OptionalUserButton,
 } from "@/lib/clerk-compat";
+import { debitCardOperations } from "@/lib/debit-card-config";
+import { prepaidCardOperations, prepaidCustomerTypes } from "@/lib/prepaid-card-config";
 
-// Main navigation links point to the existing category landing pages.
 const NAV = [
   { label: "Credit Cards", href: "/credit-cards" },
   { label: "Debit Cards", href: "/debit-cards" },
   { label: "Prepaid Cards", href: "/prepaid-cards" },
   { label: "Checking Accounts", href: "/checking-accounts" },
   { label: "Loans", href: "/loans" },
-] as const;
-
-const TICKER = [
-  ["CMR Falabella", "Volume", "+20,2%", "up"],
-  ["BCI", "Volume", "+8,7%", "up"],
-  ["Banco Itaú", "Volume", "+5,6%", "up"],
-  ["Banco de Chile", "Market Share", "-0,9 pp", "down"],
-  ["Santander", "Market Share", "-1,3 pp", "down"],
-  ["Scotiabank", "Activation", "+3,1 pp", "up"],
-  ["Banco Estado", "Checking", "+12,4%", "up"],
-  ["Tenpo", "Active Cards", "+41,8%", "up"],
-  ["Coopeuch", "Consumer Loans", "-2,1%", "down"],
-  ["Ripley", "Cash Advances", "+6,7%", "up"],
-] as const;
-
-const RANKING = [
-  { bank: "CMR Falabella", volume: "$937.874", growth: "+20,2%", share: "24,4%", trend: "up" },
-  { bank: "Banco Santander", volume: "$847.598", growth: "+1,2%", share: "22,1%", trend: "down" },
-  { bank: "Banco de Chile", volume: "$618.529", growth: "+1,7%", share: "16,1%", trend: "down" },
-  { bank: "BCI", volume: "$288.159", growth: "+8,7%", share: "7,5%", trend: "up" },
-  { bank: "Banco Itaú", volume: "$217.111", growth: "+5,6%", share: "5,7%", trend: "down" },
 ] as const;
 
 const PRODUCTS = [
@@ -69,7 +51,7 @@ const PRODUCTS = [
     number: "04",
     title: "Checking Accounts",
     metrics: ["Balances", "Accounts", "Average Balance", "UF"],
-    accent: "#a78bfa",
+    accent: "var(--home-mint)",
     href: "/checking-accounts",
   },
   {
@@ -77,10 +59,109 @@ const PRODUCTS = [
     number: "05",
     title: "Loans",
     metrics: ["Consumer", "Mortgage", "Commercial", "Soon"],
-    accent: "#60a5fa",
+    accent: "var(--home-amber)",
     href: "/loans",
   },
 ] as const;
+
+const TICKER = [
+  ["CMR Falabella", "Volume", "+20,2%", "up"],
+  ["BCI", "Volume", "+8,7%", "up"],
+  ["Banco Itaú", "Volume", "+5,6%", "up"],
+  ["Banco de Chile", "Market Share", "-0,9 pp", "down"],
+  ["Santander", "Market Share", "-1,3 pp", "down"],
+  ["Scotiabank", "Activation", "+3,1 pp", "up"],
+  ["Banco Estado", "Checking", "+12,4%", "up"],
+  ["Tenpo", "Active Cards", "+41,8%", "up"],
+  ["Coopeuch", "Consumer Loans", "-2,1%", "down"],
+  ["Ripley", "Cash Advances", "+6,7%", "up"],
+] as const;
+
+type SnapshotCase = {
+  key: "credit" | "debit" | "prepaid" | "checking";
+  label: string;
+  tableLabel: string;
+  monthLabel: string;
+  rows: Array<{ institution: string; value: string; growth: string; share: string; trend: "up" | "down" }>;
+  total: { value: string; growth: string; share: string };
+};
+
+const SNAPSHOT_CASES: SnapshotCase[] = [
+  {
+    key: "credit",
+    label: "Credit / Purchases",
+    tableLabel: "Volume 02/26",
+    monthLabel: "Credit cards purchases snapshot · 02/26",
+    rows: [
+      { institution: "CMR Falabella", value: "$937.874", growth: "+20,2%", share: "24,4%", trend: "up" },
+      { institution: "Banco Santander", value: "$847.598", growth: "+1,2%", share: "22,1%", trend: "down" },
+      { institution: "Banco de Chile", value: "$618.529", growth: "+1,7%", share: "16,1%", trend: "down" },
+      { institution: "BCI", value: "$288.159", growth: "+8,7%", share: "7,5%", trend: "up" },
+      { institution: "Banco Itaú", value: "$217.111", growth: "+5,6%", share: "5,7%", trend: "down" },
+    ],
+    total: { value: "$3.839.569", growth: "+7,4%", share: "100,0%" },
+  },
+  {
+    key: "debit",
+    label: "Debit / Transactions",
+    tableLabel: "Transactions 02/26",
+    monthLabel: "Debit transactions snapshot · 02/26",
+    rows: [
+      { institution: "Banco Estado", value: "228.741.006", growth: "+9,8%", share: "38,7%", trend: "up" },
+      { institution: "Banco Santander", value: "91.420.501", growth: "+6,1%", share: "15,5%", trend: "up" },
+      { institution: "Banco de Chile", value: "74.300.442", growth: "+5,2%", share: "12,6%", trend: "up" },
+      { institution: "BCI", value: "63.510.208", growth: "+4,8%", share: "10,8%", trend: "up" },
+      { institution: "Banco Falabella", value: "21.204.899", growth: "+2,1%", share: "3,6%", trend: "down" },
+    ],
+    total: { value: "591.228.900", growth: "+6,9%", share: "100,0%" },
+  },
+  {
+    key: "prepaid",
+    label: "Prepaid / Purchases",
+    tableLabel: "Volume 02/26",
+    monthLabel: "Prepaid purchases snapshot · 02/26",
+    rows: [
+      { institution: "Tenpo", value: "$61.442", growth: "+41,8%", share: "42,9%", trend: "up" },
+      { institution: "Mach", value: "$38.070", growth: "+18,3%", share: "26,6%", trend: "up" },
+      { institution: "Los Héroes", value: "$19.668", growth: "+12,2%", share: "13,7%", trend: "up" },
+      { institution: "Caja Los Andes", value: "$13.004", growth: "+7,5%", share: "9,1%", trend: "up" },
+      { institution: "Tapp", value: "$6.113", growth: "-2,4%", share: "4,3%", trend: "down" },
+    ],
+    total: { value: "$143.219", growth: "+21,5%", share: "100,0%" },
+  },
+  {
+    key: "checking",
+    label: "Checking / Natural Without Interest",
+    tableLabel: "Number of Accounts 02/26",
+    monthLabel: "Checking accounts (natural without interest) · 02/26",
+    rows: [
+      { institution: "Banco Estado", value: "15.208.410", growth: "+8,9%", share: "43,5%", trend: "up" },
+      { institution: "Banco de Chile", value: "4.632.870", growth: "+5,0%", share: "13,2%", trend: "up" },
+      { institution: "Banco Santander", value: "4.218.903", growth: "+4,6%", share: "12,1%", trend: "up" },
+      { institution: "BCI", value: "2.808.116", growth: "+3,9%", share: "8,0%", trend: "up" },
+      { institution: "Banco Falabella", value: "1.688.021", growth: "+1,4%", share: "4,8%", trend: "down" },
+    ],
+    total: { value: "34.973.055", growth: "+6,2%", share: "100,0%" },
+  },
+];
+
+type LivePulseCase = {
+  product: string;
+  volume: string;
+  growth: string;
+};
+
+const LIVE_PULSE_CASES: LivePulseCase[] = [
+  { product: "Credit Cards / Purchases", volume: "$3.839.569 MM CLP", growth: "+7,4%" },
+  { product: "Debit Cards / Debit Transactions", volume: "591.228.900 Transactions", growth: "+6,9%" },
+  { product: "Prepaid Cards / Purchases", volume: "$143.219 MM CLP", growth: "+21,5%" },
+  { product: "Checking / Natural Without Interest", volume: "34.973.055 Accounts", growth: "+6,2%" },
+];
+
+type HomepagePrototypeProps = {
+  navStyle?: "dark" | "white-shell";
+  homeHref?: string;
+};
 
 function LoginButton({ compact = false }: { compact?: boolean }) {
   return (
@@ -105,11 +186,183 @@ function LoginButton({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function HomeNav() {
+function navDropdownItems(href: string) {
+  if (href === "/credit-cards") {
+    return creditCardOperations.map((item) => ({
+      label: item.label,
+      href: `/credit-cards/${item.slug}?view=${item.slug === "total-activation-rate" ? "total-active-cards" : "volume"}`,
+    }));
+  }
+
+  if (href === "/debit-cards") {
+    return debitCardOperations.map((item) => ({
+      label: item.label,
+      href: `/debit-cards/${item.slug}?view=${item.slug === "total-activation-rate" ? "total-active-cards" : "volume"}`,
+    }));
+  }
+
+  if (href === "/checking-accounts") {
+    return checkingAccountOperations.map((item) => ({
+      label: item.label,
+      href: `/checking-accounts/${item.slug}?view=volume`,
+    }));
+  }
+
+  if (href === "/prepaid-cards") {
+    return prepaidCustomerTypes.flatMap((customerType) =>
+      prepaidCardOperations.map((item) => ({
+        label: `${customerType.label}: ${item.label}`,
+        href: `/prepaid-cards/${customerType.slug}/${item.slug}?view=${
+          item.slug === "total-activation-rate" ? "total-active-cards" : "volume"
+        }`,
+      }))
+    );
+  }
+
+  return [];
+}
+
+function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  if (navStyle === "white-shell") {
+    return (
+      <header className="sticky top-0 z-50 bg-white text-slate-950 shadow-sm">
+        <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:hidden">
+          <Link href={homeHref} className="min-w-0">
+            <p className="truncate text-lg font-semibold tracking-tight text-slate-950">Taclaro</p>
+          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="rounded border border-slate-300 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-700"
+            >
+              Menu
+            </button>
+            <OptionalSignedOut>
+              <OptionalSignInButton>
+                <button
+                  type="button"
+                  className="rounded-sm border border-slate-950 bg-slate-950 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[var(--home-mint)] hover:text-slate-950"
+                >
+                  Login
+                </button>
+              </OptionalSignInButton>
+            </OptionalSignedOut>
+            <OptionalSignedIn>
+              <OptionalUserButton afterSignOutUrl="/" />
+            </OptionalSignedIn>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 px-4 py-2 sm:px-6 lg:hidden">
+          <nav className="flex items-center gap-5 overflow-x-auto whitespace-nowrap pb-0.5">
+            {NAV.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="border-b-2 border-transparent pb-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500 transition hover:text-slate-950"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        <div className="hidden h-16 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 sm:px-6 lg:grid lg:px-8">
+          <Link href={homeHref} className="justify-self-start">
+            <p className="text-xl font-semibold tracking-tight text-slate-950">Taclaro</p>
+          </Link>
+
+          <nav className="flex flex-wrap items-center justify-center gap-7">
+            {NAV.map((item) => {
+              const dropdownItems = navDropdownItems(item.href);
+
+              return (
+                <div key={item.label} className="group relative">
+                  <Link
+                    href={item.href}
+                    className="border-b-2 border-transparent pb-0.5 text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500 transition hover:text-slate-950"
+                  >
+                    {item.label}
+                  </Link>
+                  {dropdownItems.length > 0 ? (
+                    <div className="pointer-events-none absolute left-1/2 top-full z-40 hidden w-72 -translate-x-1/2 pt-3 group-hover:block">
+                      <div className="pointer-events-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                        {dropdownItems.map((dropdownItem) => (
+                          <Link
+                            key={dropdownItem.href}
+                            href={dropdownItem.href}
+                            className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
+                          >
+                            {dropdownItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </nav>
+
+          <div className="justify-self-end">
+            <OptionalSignedOut>
+              <OptionalSignInButton>
+                <button
+                  type="button"
+                  className="rounded-sm border border-slate-950 bg-slate-950 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-[var(--home-mint)] hover:text-slate-950"
+                >
+                  Login
+                </button>
+              </OptionalSignInButton>
+            </OptionalSignedOut>
+            <OptionalSignedIn>
+              <OptionalUserButton afterSignOutUrl="/" />
+            </OptionalSignedIn>
+          </div>
+        </div>
+
+        {isMobileMenuOpen ? (
+          <div className="fixed inset-0 z-50 bg-slate-950/50 lg:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+            <aside
+              className="h-full w-[86vw] max-w-sm overflow-y-auto bg-[#eef3fa] px-4 py-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Navigation</p>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded border border-slate-300 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="space-y-4">
+                {NAV.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block border-l-2 border-transparent pl-4 text-[15px] text-slate-700 transition hover:border-[var(--home-mint)] hover:text-slate-950"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </aside>
+          </div>
+        ) : null}
+      </header>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--home-rule)] bg-[color:rgb(18_28_45_/_0.88)] backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-baseline gap-2">
+        <Link href={homeHref} className="flex items-baseline gap-2">
           <span className="font-[family:var(--font-home-display)] text-2xl tracking-tight text-[var(--home-foreground)]">
             Taclaro
           </span>
@@ -142,6 +395,9 @@ function TickerStrip() {
 
   return (
     <div className="overflow-hidden border-y border-[var(--home-rule)] bg-[var(--home-surface)]">
+      <div className="border-b border-[var(--home-rule)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)] sm:px-6">
+        Credit Cards · Purchases · Latest month 02/26
+      </div>
       <div className="home-ticker flex w-max gap-10 py-3 font-[family:var(--font-home-mono)] text-[12px]">
         {items.map((item, index) => (
           <div key={`${item[0]}-${index}`} className="flex items-center gap-3 whitespace-nowrap">
@@ -163,8 +419,8 @@ function MiniChart() {
     { name: "CMR Falabella", color: "var(--home-mint)", points: [78, 92, 88, 86, 95, 90, 88, 93, 96, 100, 92, 86, 84] },
     { name: "Santander", color: "var(--home-amber)", points: [70, 80, 78, 75, 82, 80, 78, 80, 86, 88, 82, 80, 78] },
     { name: "Banco de Chile", color: "var(--home-pink)", points: [55, 62, 60, 58, 60, 58, 56, 60, 64, 68, 62, 58, 56] },
-    { name: "BCI", color: "#a78bfa", points: [28, 30, 30, 29, 32, 30, 29, 31, 32, 34, 32, 30, 29] },
-    { name: "Banco Itaú", color: "#60a5fa", points: [22, 23, 23, 22, 24, 23, 22, 23, 24, 25, 23, 22, 21] },
+    { name: "BCI", color: "var(--home-muted)", points: [28, 30, 30, 29, 32, 30, 29, 31, 32, 34, 32, 30, 29] },
+    { name: "Banco Itaú", color: "var(--home-rule)", points: [22, 23, 23, 22, 24, 23, 22, 23, 24, 25, 23, 22, 21] },
   ] as const;
   const width = 720;
   const height = 280;
@@ -242,43 +498,23 @@ function MiniChart() {
 
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-[var(--home-rule)]">
+    <section className="relative border-b border-[var(--home-rule)]">
       <div className="home-grid-glow pointer-events-none absolute inset-0" />
-      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-16 sm:px-6 md:py-24">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-14 sm:px-6 md:py-20">
         <div className="col-span-12 lg:col-span-7 lg:pr-10">
-          <div className="mb-6 flex items-center gap-3 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
-            <span className="h-2 w-2 bg-[var(--home-mint)] home-pulse-dot" />
-            Live · monthly series · Chilean banking
-          </div>
           <h1 className="font-[family:var(--font-home-display)] text-[clamp(2.6rem,6.5vw,5.4rem)] leading-[0.95] tracking-tight text-[var(--home-foreground)]">
             The banking benchmark,
-            <span className="italic text-[var(--home-mint)]"> without downloading</span> a single file.
+            <span className="italic text-[var(--home-mint)]"> without downloading</span> a single file
           </h1>
           <p className="mt-8 max-w-xl text-base leading-relaxed text-[var(--home-muted)]">
             What used to mean downloading spreadsheets, normalizing UF, cleaning issuer names, and
-            building charts now starts from one screen. Credit, debit, prepaid, checking, and
-            loans in one React surface, ready for the backend wire-up later.
+            building charts now starts from one screen.
           </p>
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link
-              href="/credit-cards/purchases?view=volume"
-              className="group inline-flex items-center gap-3 bg-[var(--home-mint)] px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--home-background)] transition-colors hover:bg-white"
-            >
-              View live demo
-              <span className="transition-transform group-hover:translate-x-1">→</span>
-            </Link>
-            <a
-              href="#methodology"
-              className="inline-flex items-center gap-2 border-b border-[var(--home-rule)] pb-1 text-[12px] font-medium uppercase tracking-[0.18em] text-[var(--home-muted)] hover:text-[var(--home-foreground)]"
-            >
-              UF methodology
-            </a>
-          </div>
 
-          <dl className="mt-14 grid grid-cols-1 gap-px bg-[var(--home-rule)] sm:grid-cols-3">
+          <dl className="mt-12 grid grid-cols-1 gap-px bg-[var(--home-rule)] sm:grid-cols-3">
             {[
-              ["16+", "Institutions"],
-              ["48", "Months"],
+              ["20+", "Institutions"],
+              ["204", "Months"],
               ["UF", "Deflated"],
             ].map(([key, value]) => (
               <div key={value} className="bg-[var(--home-background)] p-5">
@@ -293,7 +529,7 @@ function HeroSection() {
           </dl>
         </div>
 
-        <div className="col-span-12 mt-12 lg:col-span-5 lg:mt-0">
+        <div className="col-span-12 mt-10 lg:col-span-5 lg:mt-0">
           <div className="relative border border-[var(--home-rule)] bg-[var(--home-surface)]">
             <div className="flex items-center justify-between border-b border-[var(--home-rule)] px-5 py-3">
               <div>
@@ -304,43 +540,10 @@ function HeroSection() {
                   Top 5 issuers · 02/25 → 02/26
                 </div>
               </div>
-              <div className="flex items-center gap-2 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--home-mint)]">
-                <span className="h-1.5 w-1.5 bg-[var(--home-mint)] home-pulse-dot" />
-                Live
-              </div>
             </div>
             <div className="aspect-[720/280] w-full">
               <MiniChart />
             </div>
-            <div className="grid grid-cols-5 gap-px border-t border-[var(--home-rule)] bg-[var(--home-rule)]">
-              {[
-                ["CMR", "var(--home-mint)"],
-                ["Sant.", "var(--home-amber)"],
-                ["Chile", "var(--home-pink)"],
-                ["BCI", "#a78bfa"],
-                ["Itaú", "#60a5fa"],
-              ].map(([name, color]) => (
-                <div key={name} className="flex items-center gap-2 bg-[var(--home-surface)] px-3 py-2">
-                  <span className="h-2 w-2" style={{ background: color }} />
-                  <span className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-wider text-[var(--home-muted)]">
-                    {name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-12 gap-1">
-            {Array.from({ length: 12 }).map((_, index) => {
-              const height = 12 + ((index * 37) % 70);
-              return (
-                <div
-                  key={index}
-                  className="bg-[var(--home-mint)]/70"
-                  style={{ height: `${height}px`, opacity: 0.3 + (index % 5) * 0.14 }}
-                />
-              );
-            })}
           </div>
         </div>
       </div>
@@ -349,11 +552,12 @@ function HeroSection() {
 }
 
 function RankingSection() {
-  const [tab, setTab] = useState<"volume" | "share" | "growth">("volume");
+  const [activeCaseKey, setActiveCaseKey] = useState<SnapshotCase["key"]>("credit");
+  const activeCase = SNAPSHOT_CASES.find((item) => item.key === activeCaseKey) ?? SNAPSHOT_CASES[0];
 
   return (
-    <section id="credit" className="border-b border-[var(--home-rule)]">
-      <div className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
+    <section id="credit" className="border-b border-[var(--home-rule)] py-14 sm:py-16">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         <div className="grid grid-cols-12 gap-8">
           <div className="col-span-12 lg:col-span-4">
             <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
@@ -363,46 +567,41 @@ function RankingSection() {
               Who leads this month,
               <span className="italic text-[var(--home-muted)]"> and by how much.</span>
             </h2>
-            <p className="mt-5 max-w-sm text-sm leading-relaxed text-[var(--home-muted)]">
-              Volume, market share, and monthly growth already crossed together. No Excel, no
-              pasted tabs, no cleanup step in the middle.
-            </p>
-            <div className="mt-8 flex gap-px bg-[var(--home-rule)]">
-              {[
-                { key: "volume", label: "Volume" },
-                { key: "share", label: "Market Share" },
-                { key: "growth", label: "Growth" },
-              ].map((item) => (
+            <div className="mt-8 flex flex-wrap gap-2">
+              {SNAPSHOT_CASES.map((snapshotCase) => (
                 <button
-                  key={item.key}
+                  key={snapshotCase.key}
                   type="button"
-                  onClick={() => setTab(item.key as typeof tab)}
-                  className={`px-4 py-2 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.16em] transition-colors ${
-                    tab === item.key
-                      ? "bg-[var(--home-foreground)] text-[var(--home-background)]"
-                      : "bg-[var(--home-surface)] text-[var(--home-muted)] hover:text-[var(--home-foreground)]"
+                  onClick={() => setActiveCaseKey(snapshotCase.key)}
+                  className={`rounded-full border px-4 py-2 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.16em] transition-colors ${
+                    activeCase.key === snapshotCase.key
+                      ? "border-[var(--home-mint)] bg-[var(--home-mint)] text-[var(--home-background)]"
+                      : "border-[var(--home-rule)] text-[var(--home-muted)] hover:text-[var(--home-foreground)]"
                   }`}
                 >
-                  {item.label}
+                  {snapshotCase.label}
                 </button>
               ))}
             </div>
+            <p className="mt-5 text-[11px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
+              {activeCase.monthLabel}
+            </p>
           </div>
 
           <div className="col-span-12 lg:col-span-8">
             <div className="border border-[var(--home-rule)]">
               <div className="grid grid-cols-12 gap-4 border-b border-[var(--home-rule)] bg-[var(--home-surface)] px-5 py-3 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--home-muted)]">
                 <div className="col-span-1">#</div>
-                <div className="col-span-4">Bank</div>
-                <div className="col-span-3 text-right">Volume 02/26</div>
+                <div className="col-span-4">Institution</div>
+                <div className="col-span-3 text-right">{activeCase.tableLabel}</div>
                 <div className="col-span-2 text-right">YoY</div>
                 <div className="col-span-2 text-right">Share</div>
               </div>
-              {RANKING.map((item, index) => {
-                const width = parseFloat(item.share.replace(",", "."));
+              {activeCase.rows.map((row, index) => {
+                const width = parseFloat(row.share.replace(",", "."));
                 return (
                   <div
-                    key={item.bank}
+                    key={`${activeCase.key}-${row.institution}`}
                     className="relative grid grid-cols-12 items-center gap-4 border-b border-[var(--home-rule)] px-5 py-4 last:border-b-0 transition-colors hover:bg-[var(--home-surface)]"
                   >
                     <div
@@ -413,29 +612,29 @@ function RankingSection() {
                       0{index + 1}
                     </div>
                     <div className="relative col-span-4 font-[family:var(--font-home-display)] text-lg text-[var(--home-foreground)]">
-                      {item.bank}
+                      {row.institution}
                     </div>
                     <div className="relative col-span-3 text-right font-[family:var(--font-home-mono)] text-sm text-[var(--home-foreground)]">
-                      {item.volume}
+                      {row.value}
                     </div>
                     <div
                       className={`relative col-span-2 text-right font-[family:var(--font-home-mono)] text-sm ${
-                        item.trend === "up" ? "text-[var(--home-mint)]" : "text-[var(--home-pink)]"
+                        row.trend === "up" ? "text-[var(--home-mint)]" : "text-[var(--home-pink)]"
                       }`}
                     >
-                      {item.growth}
+                      {row.growth}
                     </div>
                     <div className="relative col-span-2 text-right font-[family:var(--font-home-mono)] text-sm text-[var(--home-foreground)]">
-                      {item.share}
+                      {row.share}
                     </div>
                   </div>
                 );
               })}
               <div className="grid grid-cols-12 gap-4 bg-[var(--home-surface)] px-5 py-3 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-wider text-[var(--home-muted)]">
                 <div className="col-span-5">System total</div>
-                <div className="col-span-3 text-right text-[var(--home-foreground)]">$3.839.569</div>
-                <div className="col-span-2 text-right text-[var(--home-mint)]">+7,4%</div>
-                <div className="col-span-2 text-right text-[var(--home-foreground)]">100,0%</div>
+                <div className="col-span-3 text-right text-[var(--home-foreground)]">{activeCase.total.value}</div>
+                <div className="col-span-2 text-right text-[var(--home-mint)]">{activeCase.total.growth}</div>
+                <div className="col-span-2 text-right text-[var(--home-foreground)]">{activeCase.total.share}</div>
               </div>
             </div>
           </div>
@@ -447,8 +646,8 @@ function RankingSection() {
 
 function ProductsSection() {
   return (
-    <section className="border-b border-[var(--home-rule)]">
-      <div className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
+    <section className="border-b border-[var(--home-rule)] py-14 sm:py-16">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         <div className="mb-12 flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
           <div>
             <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
@@ -514,23 +713,22 @@ function WorkflowSection() {
     "Build charts manually",
     "Repeat every month",
   ];
-  const after = ["Open Taclaro", "Choose a metric", "Start the analysis"];
+  const after = ["Open Taclaro", "Choose a metric", "Get the insights"];
 
   return (
-    <section id="methodology" className="border-b border-[var(--home-rule)] bg-[var(--home-surface)]">
-      <div className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
+    <section id="methodology" className="border-b border-[var(--home-rule)] bg-[var(--home-surface)] py-14 sm:py-16">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         <div className="grid grid-cols-12 gap-8">
           <div className="col-span-12 lg:col-span-4">
             <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
               04 — Method
             </div>
             <h2 className="mt-4 font-[family:var(--font-home-display)] text-4xl leading-tight text-[var(--home-foreground)] md:text-5xl">
-              From five hours
-              <span className="block italic text-[var(--home-mint)]">to five seconds.</span>
+              From hours
+              <span className="block italic text-[var(--home-mint)]">to seconds.</span>
             </h2>
             <p className="mt-6 max-w-sm text-sm leading-relaxed text-[var(--home-muted)]">
-              The prototype keeps the same core premise as the source app: UF-adjusted values,
-              cleaner product framing, and faster entry into the market question that matters.
+              The same UF-adjusted methodology, but without manual cleanup loops before real analysis.
             </p>
           </div>
           <div className="col-span-12 grid grid-cols-1 gap-px bg-[var(--home-rule)] lg:col-span-8 lg:grid-cols-2">
@@ -541,7 +739,7 @@ function WorkflowSection() {
               </div>
               <ol className="mt-6 space-y-4">
                 {before.map((step, index) => (
-                  <li key={step} className="flex gap-4 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
+                  <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
                     <span className="font-[family:var(--font-home-mono)] text-[11px] text-[var(--home-muted)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
@@ -555,11 +753,11 @@ function WorkflowSection() {
             <div className="bg-[var(--home-background)] p-8">
               <div className="flex items-center gap-3 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--home-mint)]">
                 <span className="h-1.5 w-6 bg-[var(--home-mint)]" />
-                Now
+                With Taclaro
               </div>
               <ol className="mt-6 space-y-4">
                 {after.map((step, index) => (
-                  <li key={step} className="flex gap-4 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
+                  <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
                     <span className="font-[family:var(--font-home-mono)] text-[11px] text-[var(--home-mint)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
@@ -581,52 +779,62 @@ function WorkflowSection() {
   );
 }
 
-function SystemPulseSection() {
-  const [value, setValue] = useState(3839569);
+function LivePulseSection() {
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setValue((current) => current + Math.floor(Math.random() * 800));
-    }, 1500);
+      setActiveIndex((current) => (current + 1) % LIVE_PULSE_CASES.length);
+    }, 2400);
 
     return () => window.clearInterval(intervalId);
   }, []);
 
-  const formattedValue = useMemo(() => value.toLocaleString("es-CL"), [value]);
+  const activeCase = LIVE_PULSE_CASES[activeIndex];
+  const monthLabel = "Latest month: 02/26";
 
   return (
-    <section className="border-b border-[var(--home-rule)]">
-      <div className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6">
-        <div className="grid grid-cols-12 items-end gap-8">
-          <div className="col-span-12 lg:col-span-7">
-            <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
-              05 — System pulse
+    <section className="border-b border-[var(--home-rule)] py-14 sm:py-16">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+        <div className="border border-[var(--home-rule)] bg-[var(--home-surface)] p-6 sm:p-8">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
+                05 — Live pulse
+              </div>
+              <h2 className="mt-3 font-[family:var(--font-home-display)] text-3xl text-[var(--home-foreground)] sm:text-4xl">
+                Product momentum at a glance
+              </h2>
             </div>
-            <div className="mt-4 font-[family:var(--font-home-display)] text-[clamp(2.4rem,7vw,5.5rem)] leading-none tracking-tight text-[var(--home-foreground)] tabular-nums">
-              ${formattedValue}
-              <span className="ml-3 text-2xl text-[var(--home-muted)]">MM CLP</span>
-            </div>
-            <div className="mt-3 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-wider text-[var(--home-muted)]">
-              Aggregated purchase volume · 02/26 series · UF-adjusted
+            <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
+              {monthLabel}
             </div>
           </div>
-          <div className="col-span-12 lg:col-span-5">
-            <div className="grid grid-cols-2 gap-px bg-[var(--home-rule)]">
-              {[
-                ["+7,4%", "vs 02/25"],
-                ["16", "institutions"],
-                ["100%", "CMF coverage"],
-                ["UF 40.290", "daily value"],
-              ].map(([headline, label]) => (
-                <div key={label} className="bg-[var(--home-background)] px-5 py-4">
-                  <div className="font-[family:var(--font-home-display)] text-2xl text-[var(--home-foreground)]">
-                    {headline}
-                  </div>
-                  <div className="mt-1 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-wider text-[var(--home-muted)]">
-                    {label}
-                  </div>
-                </div>
-              ))}
+
+          <div className="grid grid-cols-1 gap-px bg-[var(--home-rule)] md:grid-cols-3">
+            <div className="bg-[var(--home-background)] px-6 py-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
+                Product
+              </div>
+              <div className="mt-3 text-xl font-semibold text-[var(--home-foreground)]">
+                {activeCase.product}
+              </div>
+            </div>
+            <div className="bg-[var(--home-background)] px-6 py-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
+                Volume
+              </div>
+              <div className="mt-3 text-xl font-semibold text-[var(--home-foreground)]">
+                {activeCase.volume}
+              </div>
+            </div>
+            <div className="bg-[var(--home-background)] px-6 py-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
+                Growth YoY
+              </div>
+              <div className="mt-3 text-xl font-semibold text-[var(--home-mint)]">
+                {activeCase.growth}
+              </div>
             </div>
           </div>
         </div>
@@ -637,8 +845,8 @@ function SystemPulseSection() {
 
 function CallToActionSection() {
   return (
-    <section className="relative overflow-hidden border-b border-[var(--home-rule)]">
-      <div className="mx-auto max-w-[1400px] px-4 py-24 sm:px-6">
+    <section className="relative border-b border-[var(--home-rule)] py-16 sm:py-20">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         <div className="grid grid-cols-12 items-center gap-8">
           <div className="col-span-12 lg:col-span-8">
             <h2 className="font-[family:var(--font-home-display)] text-[clamp(2.5rem,6vw,5rem)] leading-[0.95] tracking-tight text-[var(--home-foreground)]">
@@ -647,27 +855,18 @@ function CallToActionSection() {
             </h2>
           </div>
           <div className="col-span-12 lg:col-span-4">
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/credit-cards/purchases?view=volume"
-                className="group flex items-center justify-between bg-[var(--home-mint)] px-6 py-5 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--home-background)] transition-colors hover:bg-white"
-              >
-                Enter Taclaro
-                <span className="transition-transform group-hover:translate-x-1">→</span>
-              </Link>
-              <Link
-                href="/debit-cards/transactions?view=volume"
-                className="flex items-center justify-between border border-[var(--home-rule)] px-6 py-5 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--home-foreground)] transition-colors hover:border-white"
-              >
-                See prototype flow
-                <span>→</span>
-              </Link>
-            </div>
+            <Link
+              href="/credit-cards/purchases?view=volume"
+              className="group flex items-center justify-between bg-[var(--home-mint)] px-6 py-5 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--home-background)] transition-colors hover:bg-white"
+            >
+              Enter Taclaro
+              <span className="transition-transform group-hover:translate-x-1">→</span>
+            </Link>
           </div>
         </div>
 
         <div
-          className="mt-16 grid gap-1 opacity-70"
+          className="mt-12 grid gap-1 opacity-70"
           style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
         >
           {Array.from({ length: 48 }).map((_, index) => (
@@ -692,8 +891,8 @@ function CallToActionSection() {
 
 function FooterSection() {
   return (
-    <footer className="bg-[var(--home-background)]">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-8 px-4 py-16 sm:px-6">
+    <footer className="pb-6 pt-10">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-8 px-4 sm:px-6">
         <div className="col-span-12 md:col-span-5">
           <div className="flex items-baseline gap-2">
             <span className="font-[family:var(--font-home-display)] text-3xl text-[var(--home-foreground)]">
@@ -706,6 +905,7 @@ function FooterSection() {
             presented in the same product shell as the main app.
           </p>
         </div>
+
         <div className="col-span-6 md:col-span-2">
           <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
             Products
@@ -720,6 +920,7 @@ function FooterSection() {
             ))}
           </ul>
         </div>
+
         <div className="col-span-6 md:col-span-2">
           <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
             Method
@@ -730,6 +931,7 @@ function FooterSection() {
             <li>Protected derived metrics</li>
           </ul>
         </div>
+
         <div className="col-span-12 md:col-span-3">
           <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
             Prototype note
@@ -740,7 +942,7 @@ function FooterSection() {
           </p>
         </div>
       </div>
-      <div className="border-t border-[var(--home-rule)]">
+      <div className="mt-8 border-t border-[var(--home-rule)]">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-5 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>© 2026 Taclaro</div>
           <div>Prototype aligned to Next.js front shell</div>
@@ -750,17 +952,20 @@ function FooterSection() {
   );
 }
 
-export function HomepagePrototype() {
+export function HomepagePrototype({
+  navStyle = "dark",
+  homeHref = "/",
+}: HomepagePrototypeProps) {
   return (
     <div className="min-h-screen bg-[var(--home-background)] text-[var(--home-foreground)]">
-      <HomeNav />
+      <HomeNav navStyle={navStyle} homeHref={homeHref} />
       <TickerStrip />
       <main>
         <HeroSection />
         <RankingSection />
         <ProductsSection />
         <WorkflowSection />
-        <SystemPulseSection />
+        <LivePulseSection />
         <CallToActionSection />
       </main>
       <FooterSection />
