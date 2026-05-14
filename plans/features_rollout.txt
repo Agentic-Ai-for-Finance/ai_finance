@@ -1,0 +1,150 @@
+Features Rollout Plan
+
+Date: 2026-05-08
+Owner: Product + Engineering
+Status: Active planning baseline
+
+Objective
+- Provide a single ordered execution plan for the next feature wave:
+  1) Home page
+  2) In-site prompt bar for analysis
+  3) Compare cards page (cross card types)
+  4) Security improvements
+  5) Prevent easy data extraction from browser network traffic
+  6) WhatsApp analysis agent
+
+Guiding Principle
+- Security and data-access architecture must be implemented before shipping new data-heavy UX.
+- If the browser needs data, requests will always be visible in network tools; the goal is to expose only authorized, minimal, non-sensitive payloads.
+
+Phase Order
+
+Phase 0: Product and Security Decisions
+Priority: Critical prerequisite
+Goal:
+- Lock product boundaries and security model before implementation.
+
+Scope:
+- Define user roles and permissions.
+- Define public vs protected datasets and endpoints.
+- Confirm auth phase approval and provider selection.
+- Define LLM scope for prompt bar and WhatsApp agent.
+- Write short threat model (top risks + controls).
+
+Done Criteria:
+- Written architecture/security decision note approved.
+- Clear list of protected endpoints and data classes.
+- Rollout backlog ready with owners.
+
+Phase 1: Backend Security Foundation
+Priority: Critical
+Goal:
+- Move sensitive data access to a secured server path and enforce authorization.
+
+Scope:
+- Replace direct browser reads of sensitive datasets with server-side API routes.
+- Enforce auth + authorization middleware on protected routes.
+- Enable/verify Supabase RLS policies for protected user/data scopes.
+- Add rate limiting, error handling, and audit logging on key APIs.
+- Keep anon/public reads only where explicitly approved.
+
+Done Criteria:
+- No sensitive table access directly from browser.
+- Protected routes require valid auth and pass authorization checks.
+- Network payloads are minimal, aggregated/sanitized as needed.
+
+Phase 2: Home Page
+Priority: High
+Goal:
+- Create a clean product entry page at `/`.
+
+Scope:
+- Build home page content and navigation to primary sections.
+- Add responsive layout and clear CTA paths.
+- Preserve existing shell language and category structure.
+
+Done Criteria:
+- Home page live, responsive, and linked to active sections.
+- No regression to existing navigation behavior.
+
+Phase 3: Prompt Bar (Website Analysis Assistant)
+Priority: High
+Goal:
+- Let users ask natural-language questions and receive grounded analytics responses.
+
+Scope:
+- Add prompt bar UI and interaction flow.
+- Add backend orchestration endpoint for safe analytics queries.
+- Implement guardrails: query limits, allowed operations, date-window limits.
+- Return structured data for chart/table output plus explanation text.
+
+Done Criteria:
+- Responses are grounded in approved data sources.
+- Guardrails prevent unrestricted/raw data extraction.
+- Acceptable latency and cost targets met.
+
+Phase 4: Compare Cards Page
+Priority: High
+Goal:
+- Enable cross-type card comparisons in one dedicated route.
+
+Scope:
+- New compare page for credit/debit/prepaid metrics.
+- Shared metric semantics so comparisons are consistent.
+- Filters: period, issuer/bank, card type, metric.
+- Visual chart + comparison table.
+
+Done Criteria:
+- Users can compare selected entities with consistent definitions.
+- Shareable URL state works reliably.
+- Data comes through secured API path from Phase 1.
+
+Phase 5: WhatsApp Analysis Agent
+Priority: Medium-High
+Goal:
+- Provide analysis access without opening the website.
+
+Scope:
+- Integrate WhatsApp channel provider (implementation choice to be finalized).
+- Reuse analysis engine from prompt bar backend.
+- Add identity/account-linking and authorization checks.
+- Add monitoring, logs, and fallback responses.
+
+Done Criteria:
+- Users can query metrics via WhatsApp and get reliable responses.
+- Access control matches website permissions and data policy.
+- Operational monitoring in place.
+
+Phase 6: Hardening and Launch Readiness
+Priority: Critical before broad release
+Goal:
+- Validate security, reliability, and operational readiness.
+
+Scope:
+- Security testing (auth bypass, injection attempts, abuse patterns).
+- Performance testing for key endpoints and heavy date ranges.
+- Alerting, incident runbook, and rollback readiness.
+- Final UX and quality review.
+
+Done Criteria:
+- Security checklist signed off.
+- Performance and error budgets validated.
+- Rollback and incident procedures documented.
+
+Feature-to-Phase Mapping
+- Feature 1 (Home page): Phase 2
+- Feature 2 (Prompt bar): Phase 3
+- Feature 3 (Compare cards page): Phase 4
+- Feature 4 (Improve security): Phases 1 and 6
+- Feature 5 (Reduce data exposure in browser network): Phase 1 architecture change
+- Feature 6 (WhatsApp agent): Phase 5
+
+Execution Notes
+- Do not start prompt bar, compare page, or WhatsApp rollout before Phase 1 baseline is complete.
+- Keep one source of truth for statuses in this file by appending dated progress entries.
+
+Progress Log
+- 2026-05-08: Initial ordered rollout plan created.
+- 2026-05-10: Phase 1 backend security foundation completed in development. Applied Supabase migrations `019_phase1_grant_hardening` and `020_phase1_profile_audit_least_privilege` to project `hnuvihnvabfryedfchdb`; verified frontend security contracts and DB security SQL tests pass (`8 passed`), `front` production build passes, and manual runtime auth checks succeeded with multiple real user accounts (logged-out public access boundaries, signed-in protected metric access, and admin-gated audit surface).
+- 2026-05-13: Phase 2 home page moved to active `/` route with refreshed navigation consistency across dashboards. Home now reads aggregated metrics from dedicated public endpoint `/api/v1/public/homepage` (credit-card scope for hero/live pulse, canonical issuer mapping, banking+Tenpo filtering, and today-Santiago UF default with no homepage UF override).
+- 2026-05-14: CI fast-feedback parity updated for release branches; pushes to `release-*` now trigger the same fast-feedback workflow previously scoped to `development-*`.

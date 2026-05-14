@@ -39,7 +39,9 @@ class PrepaidCardCountsObservationBatch:
     latest_cards_with_operations_source_month: date | None
 
 
-def build_cmf_cuadros_url(*, endpoint_base: str, tag: str, fecha_fin: date, fecha_inicio: str) -> str:
+def build_cmf_cuadros_url(
+    *, endpoint_base: str, tag: str, fecha_fin: date, fecha_inicio: str
+) -> str:
     query = urlencode(
         {
             "FechaFin": fecha_fin.strftime("%Y%m%d"),
@@ -126,12 +128,20 @@ def parse_operation_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
-    return sorted(observations, key=lambda observation: (observation.institution_code, observation.period_month))
+    return sorted(
+        observations,
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def parse_card_count_payload(
@@ -168,12 +178,20 @@ def parse_card_count_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
-    return sorted(observations, key=lambda observation: (observation.institution_code, observation.period_month))
+    return sorted(
+        observations,
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def merge_operation_measure_observations(
@@ -276,7 +294,9 @@ async def fetch_card_count_observations(
     )
 
 
-async def fetch_operation_batch(client, *, config: PrepaidCardOperationConfig, fecha_fin: date) -> PrepaidCardOpsObservationBatch:
+async def fetch_operation_batch(
+    client, *, config: PrepaidCardOperationConfig, fecha_fin: date
+) -> PrepaidCardOpsObservationBatch:
     transaction_count_observations = await fetch_operation_measure_observations(
         client,
         endpoint_base=config.source_endpoint_base,
@@ -324,13 +344,17 @@ async def fetch_operation_batch(client, *, config: PrepaidCardOperationConfig, f
     return PrepaidCardOpsObservationBatch(
         raw_observations=raw_observations,
         latest_source_month=latest_source_month,
-        earliest_source_month=min((observation.period_month for observation in raw_observations), default=None),
+        earliest_source_month=min(
+            (observation.period_month for observation in raw_observations), default=None
+        ),
         latest_transaction_count_source_month=latest_transaction_count_source_month,
         latest_nominal_volume_source_month=latest_nominal_volume_source_month,
     )
 
 
-def to_card_count_raw_observations(observations: list[PrepaidCardCountObservation]) -> list[PrepaidCardCountRawObservation]:
+def to_card_count_raw_observations(
+    observations: list[PrepaidCardCountObservation],
+) -> list[PrepaidCardCountRawObservation]:
     return [
         PrepaidCardCountRawObservation(
             customer_type=observation.customer_type,
@@ -348,7 +372,9 @@ def to_card_count_raw_observations(observations: list[PrepaidCardCountObservatio
     ]
 
 
-async def fetch_card_counts_batch(client, *, config: PrepaidCardCountsConfig, fecha_fin: date) -> PrepaidCardCountsObservationBatch:
+async def fetch_card_counts_batch(
+    client, *, config: PrepaidCardCountsConfig, fecha_fin: date
+) -> PrepaidCardCountsObservationBatch:
     active_cards_total = await fetch_card_count_observations(
         client,
         endpoint_base=config.source_endpoint_base,
@@ -374,11 +400,28 @@ async def fetch_card_counts_batch(client, *, config: PrepaidCardCountsConfig, fe
     ]
 
     return PrepaidCardCountsObservationBatch(
-        raw_observations=sorted(raw_observations, key=lambda observation: (observation.dataset_code, observation.institution_code, observation.period_month)),
-        latest_source_month=max((observation.period_month for observation in raw_observations), default=None),
-        earliest_source_month=min((observation.period_month for observation in raw_observations), default=None),
-        latest_active_cards_total_source_month=max((observation.period_month for observation in active_cards_total), default=None),
-        latest_cards_with_operations_source_month=max((observation.period_month for observation in cards_with_operations), default=None),
+        raw_observations=sorted(
+            raw_observations,
+            key=lambda observation: (
+                observation.dataset_code,
+                observation.institution_code,
+                observation.period_month,
+            ),
+        ),
+        latest_source_month=max(
+            (observation.period_month for observation in raw_observations), default=None
+        ),
+        earliest_source_month=min(
+            (observation.period_month for observation in raw_observations), default=None
+        ),
+        latest_active_cards_total_source_month=max(
+            (observation.period_month for observation in active_cards_total),
+            default=None,
+        ),
+        latest_cards_with_operations_source_month=max(
+            (observation.period_month for observation in cards_with_operations),
+            default=None,
+        ),
     )
 
 

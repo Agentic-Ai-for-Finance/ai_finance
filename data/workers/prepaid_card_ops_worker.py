@@ -47,7 +47,10 @@ from data.models.prepaid_card_operations import (
     PrepaidCardEndpointConfig,
     PrepaidCardOperationConfig,
 )
-from data.sources.prepaid_card_operations import fetch_card_counts_batch, fetch_operation_batch
+from data.sources.prepaid_card_operations import (
+    fetch_card_counts_batch,
+    fetch_operation_batch,
+)
 from data.transforms.prepaid_card_ops import (
     to_curated_prepaid_card_counts,
     to_curated_prepaid_card_ops,
@@ -72,23 +75,45 @@ def load_config() -> PrepaidCardOpsWorkerConfig:
     return PrepaidCardOpsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
-        endpoint_base=os.environ.get("BASE_ENDPOINT_CMF_CARDS", DEFAULT_CMF_ENDPOINT_BASE),
+        endpoint_base=os.environ.get(
+            "BASE_ENDPOINT_CMF_CARDS", DEFAULT_CMF_ENDPOINT_BASE
+        ),
     )
 
 
 def operation_dataset_code(customer_type: str, operation_type: str) -> str:
     datasets = {
-        (PREPAID_CUSTOMER_TYPE_NATURAL_PERSON, PREPAID_CARD_OPERATION_PURCHASES): PREPAID_CARD_OPS_NATURAL_PERSON_PURCHASES_DATASET,
-        (PREPAID_CUSTOMER_TYPE_NATURAL_PERSON, PREPAID_CARD_OPERATION_UTILITIES): PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET,
-        (PREPAID_CUSTOMER_TYPE_NATURAL_PERSON, PREPAID_CARD_OPERATION_ATM_WITHDRAWALS): PREPAID_CARD_OPS_NATURAL_PERSON_ATM_WITHDRAWALS_DATASET,
-        (PREPAID_CUSTOMER_TYPE_BUSINESS, PREPAID_CARD_OPERATION_PURCHASES): PREPAID_CARD_OPS_BUSINESS_PURCHASES_DATASET,
-        (PREPAID_CUSTOMER_TYPE_BUSINESS, PREPAID_CARD_OPERATION_UTILITIES): PREPAID_CARD_OPS_BUSINESS_UTILITIES_DATASET,
-        (PREPAID_CUSTOMER_TYPE_BUSINESS, PREPAID_CARD_OPERATION_ATM_WITHDRAWALS): PREPAID_CARD_OPS_BUSINESS_ATM_WITHDRAWALS_DATASET,
+        (
+            PREPAID_CUSTOMER_TYPE_NATURAL_PERSON,
+            PREPAID_CARD_OPERATION_PURCHASES,
+        ): PREPAID_CARD_OPS_NATURAL_PERSON_PURCHASES_DATASET,
+        (
+            PREPAID_CUSTOMER_TYPE_NATURAL_PERSON,
+            PREPAID_CARD_OPERATION_UTILITIES,
+        ): PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET,
+        (
+            PREPAID_CUSTOMER_TYPE_NATURAL_PERSON,
+            PREPAID_CARD_OPERATION_ATM_WITHDRAWALS,
+        ): PREPAID_CARD_OPS_NATURAL_PERSON_ATM_WITHDRAWALS_DATASET,
+        (
+            PREPAID_CUSTOMER_TYPE_BUSINESS,
+            PREPAID_CARD_OPERATION_PURCHASES,
+        ): PREPAID_CARD_OPS_BUSINESS_PURCHASES_DATASET,
+        (
+            PREPAID_CUSTOMER_TYPE_BUSINESS,
+            PREPAID_CARD_OPERATION_UTILITIES,
+        ): PREPAID_CARD_OPS_BUSINESS_UTILITIES_DATASET,
+        (
+            PREPAID_CUSTOMER_TYPE_BUSINESS,
+            PREPAID_CARD_OPERATION_ATM_WITHDRAWALS,
+        ): PREPAID_CARD_OPS_BUSINESS_ATM_WITHDRAWALS_DATASET,
     }
     try:
         return datasets[(customer_type, operation_type)]
     except KeyError as exc:
-        raise ValueError(f"Unsupported prepaid operation config: {customer_type} / {operation_type}") from exc
+        raise ValueError(
+            f"Unsupported prepaid operation config: {customer_type} / {operation_type}"
+        ) from exc
 
 
 def load_active_operation_configs(sb) -> list[PrepaidCardOperationConfig]:
@@ -104,16 +129,28 @@ def load_active_operation_configs(sb) -> list[PrepaidCardOperationConfig]:
     )
     endpoints_by_key: dict[tuple[str, str], dict[str, PrepaidCardEndpointConfig]] = {}
     for row in response.data or []:
-        if not row.get("customer_type") or not row.get("operation_type") or not row.get("measure_kind") or not row.get("source_tag"):
+        if (
+            not row.get("customer_type")
+            or not row.get("operation_type")
+            or not row.get("measure_kind")
+            or not row.get("source_tag")
+        ):
             continue
-        if row["measure_kind"] not in {CMF_MEASURE_KIND_TRANSACTION_COUNT, CMF_MEASURE_KIND_NOMINAL_VOLUME}:
+        if row["measure_kind"] not in {
+            CMF_MEASURE_KIND_TRANSACTION_COUNT,
+            CMF_MEASURE_KIND_NOMINAL_VOLUME,
+        }:
             continue
         endpoint = PrepaidCardEndpointConfig.from_row(row)
-        endpoints_by_key.setdefault((endpoint.customer_type, endpoint.operation_type), {})[endpoint.measure_kind] = endpoint
+        endpoints_by_key.setdefault(
+            (endpoint.customer_type, endpoint.operation_type), {}
+        )[endpoint.measure_kind] = endpoint
 
     operations: list[PrepaidCardOperationConfig] = []
     for (customer_type, operation_type), endpoint_group in endpoints_by_key.items():
-        transaction_count_endpoint = endpoint_group.get(CMF_MEASURE_KIND_TRANSACTION_COUNT)
+        transaction_count_endpoint = endpoint_group.get(
+            CMF_MEASURE_KIND_TRANSACTION_COUNT
+        )
         nominal_volume_endpoint = endpoint_group.get(CMF_MEASURE_KIND_NOMINAL_VOLUME)
         if transaction_count_endpoint is None or nominal_volume_endpoint is None:
             continue
@@ -152,15 +189,22 @@ def load_active_card_counts_configs(sb) -> list[PrepaidCardCountsConfig]:
 
     endpoints_by_customer_type: dict[str, dict[str, PrepaidCardEndpointConfig]] = {}
     for row in response.data or []:
-        if row.get("measure_kind") not in {CMF_MEASURE_KIND_ACTIVE_CARDS_TOTAL, CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS}:
+        if row.get("measure_kind") not in {
+            CMF_MEASURE_KIND_ACTIVE_CARDS_TOTAL,
+            CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS,
+        }:
             continue
         endpoint = PrepaidCardEndpointConfig.from_row(row)
-        endpoints_by_customer_type.setdefault(endpoint.customer_type, {})[endpoint.measure_kind] = endpoint
+        endpoints_by_customer_type.setdefault(endpoint.customer_type, {})[
+            endpoint.measure_kind
+        ] = endpoint
 
     configs: list[PrepaidCardCountsConfig] = []
     for customer_type, endpoint_group in endpoints_by_customer_type.items():
         active_cards_total = endpoint_group.get(CMF_MEASURE_KIND_ACTIVE_CARDS_TOTAL)
-        cards_with_operations = endpoint_group.get(CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS)
+        cards_with_operations = endpoint_group.get(
+            CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS
+        )
         if active_cards_total is None or cards_with_operations is None:
             continue
         configs.append(
@@ -177,7 +221,9 @@ def load_active_card_counts_configs(sb) -> list[PrepaidCardCountsConfig]:
                 cards_with_operations_source_tag=cards_with_operations.source_tag,
                 source_endpoint_base=active_cards_total.source_endpoint_base,
                 refresh_frequency=active_cards_total.refresh_frequency,
-                start_date=min(active_cards_total.start_date, cards_with_operations.start_date),
+                start_date=min(
+                    active_cards_total.start_date, cards_with_operations.start_date
+                ),
             )
         )
     return sorted(configs, key=lambda config: config.dataset_code)
@@ -202,18 +248,28 @@ def build_active_cards_lookup(sb):
         for row in rows:
             if row.get("total_active_cards") is None:
                 continue
-            totals[(row["customer_type"], row["institution_code"], date.fromisoformat(row["period_month"]))] = Decimal(str(row["total_active_cards"]))
+            totals[
+                (
+                    row["customer_type"],
+                    row["institution_code"],
+                    date.fromisoformat(row["period_month"]),
+                )
+            ] = Decimal(str(row["total_active_cards"]))
         if len(rows) < page_size:
             break
         offset += page_size
 
-    def lookup(customer_type: str, institution_code: str, period_month: date) -> Decimal | None:
+    def lookup(
+        customer_type: str, institution_code: str, period_month: date
+    ) -> Decimal | None:
         return totals.get((customer_type, institution_code, period_month))
 
     return lookup
 
 
-async def sync_operation_once(client: httpx.AsyncClient, sb, *, config: PrepaidCardOperationConfig, run_date: date) -> int:
+async def sync_operation_once(
+    client: httpx.AsyncClient, sb, *, config: PrepaidCardOperationConfig, run_date: date
+) -> int:
     record_sync_attempt(sb, config.transaction_count_dataset_code)
     record_sync_attempt(sb, config.nominal_volume_dataset_code)
     try:
@@ -222,22 +278,40 @@ async def sync_operation_once(client: httpx.AsyncClient, sb, *, config: PrepaidC
             log.info("Skipping %s: source returned no rows.", config.dataset_code)
             return 0
 
-        latest_transaction_count_state_month = get_latest_state_source_month(sb, config.transaction_count_dataset_code)
-        latest_nominal_volume_state_month = get_latest_state_source_month(sb, config.nominal_volume_dataset_code)
-        earliest_curated_month = earliest_curated_operation_month(sb, dataset_code=config.dataset_code)
-        transaction_count_unchanged = batch.latest_transaction_count_source_month is None or (
-            latest_transaction_count_state_month is not None
-            and batch.latest_transaction_count_source_month <= latest_transaction_count_state_month
+        latest_transaction_count_state_month = get_latest_state_source_month(
+            sb, config.transaction_count_dataset_code
+        )
+        latest_nominal_volume_state_month = get_latest_state_source_month(
+            sb, config.nominal_volume_dataset_code
+        )
+        earliest_curated_month = earliest_curated_operation_month(
+            sb, dataset_code=config.dataset_code
+        )
+        transaction_count_unchanged = (
+            batch.latest_transaction_count_source_month is None
+            or (
+                latest_transaction_count_state_month is not None
+                and batch.latest_transaction_count_source_month
+                <= latest_transaction_count_state_month
+            )
         )
         nominal_volume_unchanged = batch.latest_nominal_volume_source_month is None or (
             latest_nominal_volume_state_month is not None
-            and batch.latest_nominal_volume_source_month <= latest_nominal_volume_state_month
+            and batch.latest_nominal_volume_source_month
+            <= latest_nominal_volume_state_month
         )
         history_is_complete = batch.earliest_source_month is None or (
-            earliest_curated_month is not None and earliest_curated_month <= batch.earliest_source_month
+            earliest_curated_month is not None
+            and earliest_curated_month <= batch.earliest_source_month
         )
-        if transaction_count_unchanged and nominal_volume_unchanged and history_is_complete:
-            log.info("Skipping %s: latest source month is unchanged.", config.dataset_code)
+        if (
+            transaction_count_unchanged
+            and nominal_volume_unchanged
+            and history_is_complete
+        ):
+            log.info(
+                "Skipping %s: latest source month is unchanged.", config.dataset_code
+            )
             return 0
 
         curated_observations = to_curated_prepaid_card_ops(
@@ -248,27 +322,38 @@ async def sync_operation_once(client: httpx.AsyncClient, sb, *, config: PrepaidC
         upsert_prepaid_card_ops_raw(sb, batch.raw_observations)
         upsert_prepaid_card_ops_curated(sb, curated_observations)
     except Exception as exc:
-        record_sync_failure(sb, dataset_code=config.transaction_count_dataset_code, error=exc)
-        record_sync_failure(sb, dataset_code=config.nominal_volume_dataset_code, error=exc)
+        record_sync_failure(
+            sb, dataset_code=config.transaction_count_dataset_code, error=exc
+        )
+        record_sync_failure(
+            sb, dataset_code=config.nominal_volume_dataset_code, error=exc
+        )
         raise
 
     record_sync_success(
         sb,
         dataset_code=config.transaction_count_dataset_code,
-        latest_source_month=batch.latest_transaction_count_source_month or batch.latest_source_month,
+        latest_source_month=batch.latest_transaction_count_source_month
+        or batch.latest_source_month,
         latest_curated_month=batch.latest_source_month,
     )
     record_sync_success(
         sb,
         dataset_code=config.nominal_volume_dataset_code,
-        latest_source_month=batch.latest_nominal_volume_source_month or batch.latest_source_month,
+        latest_source_month=batch.latest_nominal_volume_source_month
+        or batch.latest_source_month,
         latest_curated_month=batch.latest_source_month,
     )
     return len(batch.raw_observations)
 
 
-async def sync_card_counts_once(client: httpx.AsyncClient, sb, *, config: PrepaidCardCountsConfig, run_date: date) -> int:
-    dataset_codes = [config.active_cards_total_dataset_code, config.cards_with_operations_dataset_code]
+async def sync_card_counts_once(
+    client: httpx.AsyncClient, sb, *, config: PrepaidCardCountsConfig, run_date: date
+) -> int:
+    dataset_codes = [
+        config.active_cards_total_dataset_code,
+        config.cards_with_operations_dataset_code,
+    ]
     for dataset_code in dataset_codes:
         record_sync_attempt(sb, dataset_code)
 
@@ -278,7 +363,10 @@ async def sync_card_counts_once(client: httpx.AsyncClient, sb, *, config: Prepai
             log.info("Skipping %s: source returned no rows.", config.dataset_code)
             return 0
 
-        latest_state_months = {dataset_code: get_latest_state_source_month(sb, dataset_code) for dataset_code in dataset_codes}
+        latest_state_months = {
+            dataset_code: get_latest_state_source_month(sb, dataset_code)
+            for dataset_code in dataset_codes
+        }
         latest_batch_months = {
             config.active_cards_total_dataset_code: batch.latest_active_cards_total_source_month,
             config.cards_with_operations_dataset_code: batch.latest_cards_with_operations_source_month,
@@ -292,12 +380,17 @@ async def sync_card_counts_once(client: httpx.AsyncClient, sb, *, config: Prepai
                 all_unchanged = False
                 break
 
-        earliest_curated_month = earliest_curated_card_count_month(sb, dataset_code=config.dataset_code)
+        earliest_curated_month = earliest_curated_card_count_month(
+            sb, dataset_code=config.dataset_code
+        )
         history_is_complete = batch.earliest_source_month is None or (
-            earliest_curated_month is not None and earliest_curated_month <= batch.earliest_source_month
+            earliest_curated_month is not None
+            and earliest_curated_month <= batch.earliest_source_month
         )
         if all_unchanged and history_is_complete:
-            log.info("Skipping %s: latest source month is unchanged.", config.dataset_code)
+            log.info(
+                "Skipping %s: latest source month is unchanged.", config.dataset_code
+            )
             return 0
 
         curated_observations = to_curated_prepaid_card_counts(batch.raw_observations)
@@ -338,31 +431,53 @@ async def sync_all_prepaid_card_ops_once(
 
     for counts_config in card_counts or load_active_card_counts_configs(sb):
         try:
-            results[counts_config.dataset_code] = await sync_card_counts_once(client, sb, config=counts_config, run_date=run_date)
+            results[counts_config.dataset_code] = await sync_card_counts_once(
+                client, sb, config=counts_config, run_date=run_date
+            )
         except Exception as exc:
-            log.warning("Prepaid card counts %s failed: %s: %s", counts_config.dataset_code, type(exc).__name__, exc)
+            log.warning(
+                "Prepaid card counts %s failed: %s: %s",
+                counts_config.dataset_code,
+                type(exc).__name__,
+                exc,
+            )
             results[counts_config.dataset_code] = 0
 
     for operation in operations or load_active_operation_configs(sb):
         try:
-            results[operation.dataset_code] = await sync_operation_once(client, sb, config=operation, run_date=run_date)
+            results[operation.dataset_code] = await sync_operation_once(
+                client, sb, config=operation, run_date=run_date
+            )
         except Exception as exc:
-            log.warning("Prepaid card operation %s failed: %s: %s", operation.dataset_code, type(exc).__name__, exc)
+            log.warning(
+                "Prepaid card operation %s failed: %s: %s",
+                operation.dataset_code,
+                type(exc).__name__,
+                exc,
+            )
             results[operation.dataset_code] = 0
 
     return results
 
 
 async def run_worker(config: PrepaidCardOpsWorkerConfig | None = None) -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
     worker_config = config or load_config()
-    sb = create_client(worker_config.supabase_url, worker_config.supabase_service_role_key)
+    sb = create_client(
+        worker_config.supabase_url, worker_config.supabase_service_role_key
+    )
 
     async with httpx.AsyncClient() as client:
         while True:
             try:
-                await sync_all_prepaid_card_ops_once(client, sb, config=worker_config, run_date=date.today())
+                await sync_all_prepaid_card_ops_once(
+                    client, sb, config=worker_config, run_date=date.today()
+                )
             except Exception as exc:
-                log.warning("Prepaid card ops sync failed: %s: %s", type(exc).__name__, exc)
+                log.warning(
+                    "Prepaid card ops sync failed: %s: %s", type(exc).__name__, exc
+                )
 
             await asyncio.sleep(worker_config.sync_interval_s)

@@ -52,8 +52,14 @@ class _Supabase:
 
 
 def test_operation_dataset_code_maps_world_and_operation():
-    assert operation_dataset_code("Natural Person", "Utilities") == PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET
-    assert operation_dataset_code("Business", "Purchases") == PREPAID_CARD_OPS_BUSINESS_PURCHASES_DATASET
+    assert (
+        operation_dataset_code("Natural Person", "Utilities")
+        == PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET
+    )
+    assert (
+        operation_dataset_code("Business", "Purchases")
+        == PREPAID_CARD_OPS_BUSINESS_PURCHASES_DATASET
+    )
 
 
 def test_load_active_configs_group_by_customer_type_and_measure_kind():
@@ -143,7 +149,9 @@ def test_load_active_configs_group_by_customer_type_and_measure_kind():
     counts_configs = load_active_card_counts_configs(sb)
 
     assert len(operations) == 1
-    assert operations[0].dataset_code == PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET
+    assert (
+        operations[0].dataset_code == PREPAID_CARD_OPS_NATURAL_PERSON_UTILITIES_DATASET
+    )
     assert sorted(config.dataset_code for config in counts_configs) == [
         PREPAID_CARD_COUNTS_BUSINESS_DATASET,
         PREPAID_CARD_COUNTS_NATURAL_PERSON_DATASET,

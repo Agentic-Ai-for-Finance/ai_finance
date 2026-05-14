@@ -57,7 +57,9 @@ def load_config() -> CheckingAccountsWorkerConfig:
     return CheckingAccountsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
-        endpoint_base=os.environ.get("BASE_ENDPOINT_CMF_CARDS", DEFAULT_CMF_ENDPOINT_BASE),
+        endpoint_base=os.environ.get(
+            "BASE_ENDPOINT_CMF_CARDS", DEFAULT_CMF_ENDPOINT_BASE
+        ),
     )
 
 
@@ -91,12 +93,18 @@ def load_active_checking_accounts_configs(sb) -> list[CheckingAccountsConfig]:
         CHECKING_ACCOUNTS_OPERATION_BUSINESS_WITH_INTEREST,
     }
     for row in response.data or []:
-        if not row.get("operation_type") or not row.get("measure_kind") or not row.get("source_tag"):
+        if (
+            not row.get("operation_type")
+            or not row.get("measure_kind")
+            or not row.get("source_tag")
+        ):
             continue
         if row["operation_type"] not in supported_operations:
             continue
         endpoint = CheckingAccountsEndpointConfig.from_row(row)
-        endpoints_by_operation.setdefault(endpoint.operation_type, {})[endpoint.measure_kind] = endpoint
+        endpoints_by_operation.setdefault(endpoint.operation_type, {})[
+            endpoint.measure_kind
+        ] = endpoint
 
     operations: list[CheckingAccountsConfig] = []
     for operation_type, endpoint_group in endpoints_by_operation.items():
@@ -117,7 +125,10 @@ def load_active_checking_accounts_configs(sb) -> list[CheckingAccountsConfig]:
                 source_description=account_count_endpoint.source_description,
                 source_endpoint_base=account_count_endpoint.source_endpoint_base,
                 refresh_frequency=account_count_endpoint.refresh_frequency,
-                start_date=min(account_count_endpoint.start_date, nominal_balance_endpoint.start_date),
+                start_date=min(
+                    account_count_endpoint.start_date,
+                    nominal_balance_endpoint.start_date,
+                ),
                 account_count_start_date=account_count_endpoint.start_date,
                 nominal_balance_start_date=nominal_balance_endpoint.start_date,
             )
@@ -136,38 +147,47 @@ async def sync_checking_accounts_once(
     record_sync_attempt(sb, config.account_count_dataset_code)
     record_sync_attempt(sb, config.nominal_balance_dataset_code)
     try:
-        batch = await fetch_checking_accounts_batch(client, config=config, fecha_fin=run_date)
+        batch = await fetch_checking_accounts_batch(
+            client, config=config, fecha_fin=run_date
+        )
         if batch.latest_source_month is None:
             log.info("Skipping %s: source returned no rows.", config.dataset_code)
             return 0
 
-        latest_count_state_month = get_latest_state_source_month(sb, config.account_count_dataset_code)
-        latest_balance_state_month = get_latest_state_source_month(sb, config.nominal_balance_dataset_code)
-        earliest_curated_month = earliest_curated_checking_accounts_month(sb, dataset_code=config.dataset_code)
+        latest_count_state_month = get_latest_state_source_month(
+            sb, config.account_count_dataset_code
+        )
+        latest_balance_state_month = get_latest_state_source_month(
+            sb, config.nominal_balance_dataset_code
+        )
+        earliest_curated_month = earliest_curated_checking_accounts_month(
+            sb, dataset_code=config.dataset_code
+        )
 
-        account_count_unchanged = (
-            batch.latest_account_count_source_month is None
-            or (
-                latest_count_state_month is not None
-                and batch.latest_account_count_source_month <= latest_count_state_month
-            )
+        account_count_unchanged = batch.latest_account_count_source_month is None or (
+            latest_count_state_month is not None
+            and batch.latest_account_count_source_month <= latest_count_state_month
         )
         nominal_balance_unchanged = (
             batch.latest_nominal_balance_source_month is None
             or (
                 latest_balance_state_month is not None
-                and batch.latest_nominal_balance_source_month <= latest_balance_state_month
+                and batch.latest_nominal_balance_source_month
+                <= latest_balance_state_month
             )
         )
-        history_is_complete = (
-            batch.earliest_source_month is None
-            or (
-                earliest_curated_month is not None
-                and earliest_curated_month <= batch.earliest_source_month
-            )
+        history_is_complete = batch.earliest_source_month is None or (
+            earliest_curated_month is not None
+            and earliest_curated_month <= batch.earliest_source_month
         )
-        if account_count_unchanged and nominal_balance_unchanged and history_is_complete:
-            log.info("Skipping %s: latest source month is unchanged.", config.dataset_code)
+        if (
+            account_count_unchanged
+            and nominal_balance_unchanged
+            and history_is_complete
+        ):
+            log.info(
+                "Skipping %s: latest source month is unchanged.", config.dataset_code
+            )
             return 0
 
         curated_observations = to_curated_checking_accounts(
@@ -177,20 +197,26 @@ async def sync_checking_accounts_once(
         upsert_checking_accounts_raw(sb, batch.raw_observations)
         upsert_checking_accounts_curated(sb, curated_observations)
     except Exception as exc:
-        record_sync_failure(sb, dataset_code=config.account_count_dataset_code, error=exc)
-        record_sync_failure(sb, dataset_code=config.nominal_balance_dataset_code, error=exc)
+        record_sync_failure(
+            sb, dataset_code=config.account_count_dataset_code, error=exc
+        )
+        record_sync_failure(
+            sb, dataset_code=config.nominal_balance_dataset_code, error=exc
+        )
         raise
 
     record_sync_success(
         sb,
         dataset_code=config.account_count_dataset_code,
-        latest_source_month=batch.latest_account_count_source_month or batch.latest_source_month,
+        latest_source_month=batch.latest_account_count_source_month
+        or batch.latest_source_month,
         latest_curated_month=batch.latest_source_month,
     )
     record_sync_success(
         sb,
         dataset_code=config.nominal_balance_dataset_code,
-        latest_source_month=batch.latest_nominal_balance_source_month or batch.latest_source_month,
+        latest_source_month=batch.latest_nominal_balance_source_month
+        or batch.latest_source_month,
         latest_curated_month=batch.latest_source_month,
     )
     return len(batch.raw_observations)
@@ -225,9 +251,13 @@ async def sync_all_checking_accounts_once(
 
 
 async def run_worker(config: CheckingAccountsWorkerConfig | None = None) -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
     worker_config = config or load_config()
-    sb = create_client(worker_config.supabase_url, worker_config.supabase_service_role_key)
+    sb = create_client(
+        worker_config.supabase_url, worker_config.supabase_service_role_key
+    )
 
     async with httpx.AsyncClient() as client:
         while True:
@@ -239,6 +269,8 @@ async def run_worker(config: CheckingAccountsWorkerConfig | None = None) -> None
                     run_date=date.today(),
                 )
             except Exception as exc:
-                log.warning("Checking accounts sync failed: %s: %s", type(exc).__name__, exc)
+                log.warning(
+                    "Checking accounts sync failed: %s: %s", type(exc).__name__, exc
+                )
 
             await asyncio.sleep(worker_config.sync_interval_s)

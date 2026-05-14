@@ -21,7 +21,9 @@ from data.sources.bank_debit_card_operations import (
 )
 
 
-def _payload(*, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]):
+def _payload(
+    *, series_id: int, codigo: str, nombre: str, values: list[tuple[str, str]]
+):
     return {
         "series": [
             {
@@ -90,7 +92,9 @@ def test_parse_transaction_count_payload_normalizes_debit_source_observations():
     )
 
     assert len(observations) == 2
-    assert observations[0].dataset_code == BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
+    assert (
+        observations[0].dataset_code == BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
+    )
     assert observations[0].institution_code == "BICE"
     assert observations[0].period_month == date(2026, 3, 1)
     assert observations[0].value == Decimal("1234")
@@ -130,7 +134,10 @@ def test_parse_card_count_payload_normalizes_debit_card_counts():
     )
 
     assert len(observations) == 2
-    assert observations[0].dataset_code == BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET
+    assert (
+        observations[0].dataset_code
+        == BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET
+    )
     assert observations[0].institution_code == "BICE"
     assert observations[0].value == Decimal("100")
 
@@ -166,7 +173,9 @@ def test_merge_operation_measure_observations_builds_raw_rows():
 
     assert len(observations) == 1
     assert observations[0].operation_type == "Debit Transactions"
-    assert observations[0].dataset_code == BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
+    assert (
+        observations[0].dataset_code == BANK_DEBIT_CARD_OPS_DEBIT_TRANSACTIONS_DATASET
+    )
     assert observations[0].transaction_count == Decimal("2500")
     assert observations[0].nominal_volume_millions_clp == Decimal("120507338")
 
@@ -185,5 +194,8 @@ def test_to_card_count_raw_observations_preserves_monthly_values():
     )
 
     assert len(observations) == 1
-    assert observations[0].dataset_code == BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET
+    assert (
+        observations[0].dataset_code
+        == BANK_DEBIT_CARD_ACTIVE_CARDS_PRIMARY_DEBIT_DATASET
+    )
     assert observations[0].card_count == Decimal("110")

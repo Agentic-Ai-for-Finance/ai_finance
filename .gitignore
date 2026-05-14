@@ -31,8 +31,8 @@ mappings/
 screenshots/
 endpoints-mapping.txt
 descriptions/
+deliverables/
 
 #MCPs
 .playwright-mcp/
 node_modules/
-

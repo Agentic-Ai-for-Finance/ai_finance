@@ -73,7 +73,11 @@ export function BankSelector({ banks, selectedBanks, onChange, onReset }: BankSe
                   "h-3.5 w-3.5 rounded-full border transition",
                   checked ? "border-transparent" : "border-muted/50 bg-transparent"
                 )}
-                style={{ backgroundColor: checked ? getBankColor(bank.institutionCode) : "transparent" }}
+                style={{
+                  backgroundColor: checked
+                    ? getBankColor(bank.institutionCode, bank.institutionName)
+                    : "transparent",
+                }}
               />
               <span className="truncate">{getBankDisplayName(bank.institutionName)}</span>
             </button>
@@ -106,7 +110,11 @@ export function BankSelector({ banks, selectedBanks, onChange, onReset }: BankSe
                       "h-3.5 w-3.5 rounded-full border transition",
                       checked ? "border-transparent" : "border-muted/50 bg-transparent"
                     )}
-                    style={{ backgroundColor: checked ? getBankColor(bank.institutionCode) : "transparent" }}
+                    style={{
+                      backgroundColor: checked
+                        ? getBankColor(bank.institutionCode, bank.institutionName)
+                        : "transparent",
+                    }}
                   />
                   <span className="truncate">{getBankDisplayName(bank.institutionName)}</span>
                 </button>
@@ -131,7 +139,11 @@ export function BankSelector({ banks, selectedBanks, onChange, onReset }: BankSe
                   "h-3.5 w-3.5 rounded-full border transition",
                   checked ? "border-transparent" : "border-muted/50 bg-transparent"
                 )}
-                style={{ backgroundColor: checked ? getBankColor(bank.institutionCode) : "transparent" }}
+                style={{
+                  backgroundColor: checked
+                    ? getBankColor(bank.institutionCode, bank.institutionName)
+                    : "transparent",
+                }}
               />
               <span className="truncate">{getBankDisplayName(bank.institutionName)}</span>
             </button>

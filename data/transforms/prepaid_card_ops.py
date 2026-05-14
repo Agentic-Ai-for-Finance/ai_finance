@@ -32,15 +32,23 @@ def to_curated_prepaid_card_ops(
         uf_date = uf_conversion_date(observation.period_month)
         uf_value = uf_lookup(uf_date)
         real_value_uf = observation.nominal_volume_millions_clp / uf_value
-        average_ticket_uf = (real_value_uf / observation.transaction_count) * Decimal("1000000")
+        average_ticket_uf = (real_value_uf / observation.transaction_count) * Decimal(
+            "1000000"
+        )
         total_active_cards = (
-            active_cards_lookup(observation.customer_type, observation.institution_code, observation.period_month)
+            active_cards_lookup(
+                observation.customer_type,
+                observation.institution_code,
+                observation.period_month,
+            )
             if active_cards_lookup is not None
             else None
         )
         operations_per_active_card = None
         if total_active_cards not in (None, Decimal("0")):
-            operations_per_active_card = observation.transaction_count / total_active_cards
+            operations_per_active_card = (
+                observation.transaction_count / total_active_cards
+            )
 
         curated_observations.append(
             PrepaidCardOpsCuratedObservation(
@@ -62,7 +70,15 @@ def to_curated_prepaid_card_ops(
             )
         )
 
-    return sorted(curated_observations, key=lambda observation: (observation.customer_type, observation.operation_type, observation.institution_code, observation.period_month))
+    return sorted(
+        curated_observations,
+        key=lambda observation: (
+            observation.customer_type,
+            observation.operation_type,
+            observation.institution_code,
+            observation.period_month,
+        ),
+    )
 
 
 def to_curated_prepaid_card_counts(
@@ -71,7 +87,11 @@ def to_curated_prepaid_card_counts(
     counts_by_key: dict[tuple[str, str, date], dict[str, Decimal | str]] = {}
 
     for observation in raw_observations:
-        key = (observation.customer_type, observation.institution_code, observation.period_month)
+        key = (
+            observation.customer_type,
+            observation.institution_code,
+            observation.period_month,
+        )
         row = counts_by_key.setdefault(
             key,
             {
@@ -86,15 +106,21 @@ def to_curated_prepaid_card_counts(
             PREPAID_CARD_ACTIVE_CARDS_TOTAL_NATURAL_PERSON_DATASET,
             PREPAID_CARD_ACTIVE_CARDS_TOTAL_BUSINESS_DATASET,
         }:
-            row["total_active_cards"] = row["total_active_cards"] + observation.card_count
+            row["total_active_cards"] = (
+                row["total_active_cards"] + observation.card_count
+            )
         elif observation.dataset_code in {
             PREPAID_CARD_CARDS_WITH_OPERATIONS_NATURAL_PERSON_DATASET,
             PREPAID_CARD_CARDS_WITH_OPERATIONS_BUSINESS_DATASET,
         }:
-            row["total_cards_with_operations"] = row["total_cards_with_operations"] + observation.card_count
+            row["total_cards_with_operations"] = (
+                row["total_cards_with_operations"] + observation.card_count
+            )
 
     curated: list[PrepaidCardCountsCuratedObservation] = []
-    for (customer_type, institution_code, period_month), row in sorted(counts_by_key.items()):
+    for (customer_type, institution_code, period_month), row in sorted(
+        counts_by_key.items()
+    ):
         total_active_cards = row["total_active_cards"]
         total_cards_with_operations = row["total_cards_with_operations"]
         operations_rate = None

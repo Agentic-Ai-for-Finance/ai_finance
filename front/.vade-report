@@ -6,7 +6,7 @@ Successfully installed and configured Vercel Web Analytics for this Next.js proj
 
 #### 1. Package Installation
 - **Added dependency**: `@vercel/analytics` (version 2.0.1)
-- **Modified files**: 
+- **Modified files**:
   - `package.json` - Added @vercel/analytics to dependencies
   - `package-lock.json` - Updated with new package and its dependencies (368 packages added)
 
@@ -15,7 +15,7 @@ Successfully installed and configured Vercel Web Analytics for this Next.js proj
 - **Changes**:
   - Imported the Analytics component from `@vercel/analytics/next`
   - Added `<Analytics />` component inside the `<body>` tag of the RootLayout
-  
+
 ### Implementation Details:
 
 This project uses **Next.js with the App Router**, so I followed the framework-specific instructions from the official Vercel documentation:

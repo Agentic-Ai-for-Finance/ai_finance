@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { OptionalClerkProvider } from "@/lib/clerk-compat";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Taclaro",
-  description: "Credit-card analytics demo for Taclaro",
+  description: "Banking analytics and benchmark interface for Taclaro.",
 };
 
 export default function RootLayout({
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
-        <Analytics />
+        <OptionalClerkProvider>
+          {children}
+          <Analytics />
+        </OptionalClerkProvider>
       </body>
     </html>
   );

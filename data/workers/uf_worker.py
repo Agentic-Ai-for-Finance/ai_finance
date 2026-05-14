@@ -74,7 +74,9 @@ async def sync_uf_once(client, sb, config: UfWorkerConfig) -> int:
             latest_stored_date=new_latest_stored_date,
             rows_upserted=len(values_to_upsert),
         )
-        log.info("UF sync completed successfully with %s new rows.", len(values_to_upsert))
+        log.info(
+            "UF sync completed successfully with %s new rows.", len(values_to_upsert)
+        )
         return len(values_to_upsert)
     except Exception as exc:
         record_uf_sync_failure(sb, exc)

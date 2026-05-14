@@ -17,11 +17,11 @@ def test_checking_account_config_exposes_routes_and_supported_views():
     assert 'key: "average-balance"' in src
 
 
-def test_checking_account_supabase_queries_target_checking_view():
+def test_checking_account_queries_use_api_proxy_routes():
     src = Path("front/lib/supabase-checking-account-queries.ts").read_text()
 
-    assert 'from("checking_accounts_metrics")' in src
-    assert "METRICS_PAGE_SIZE = 1000" in src
+    assert "/api/v1/public/metrics?dataset=checking-accounts" in src
+    assert '"/api/v1/protected/metrics"' in src
 
 
 def test_checking_account_routes_wire_to_operation_slug_model():
@@ -29,7 +29,7 @@ def test_checking_account_routes_wire_to_operation_slug_model():
     dynamic_src = Path("front/app/checking-accounts/[operation]/page.tsx").read_text()
     shell_src = Path("front/lib/credit-card-config.ts").read_text()
 
-    assert "section=\"checking-accounts\"" in page_src
+    assert 'section="checking-accounts"' in page_src
     assert "operationFromSlug" in dynamic_src
     assert "CheckingAccountsDashboard" in dynamic_src
     assert "PlaceholderPanel" not in dynamic_src

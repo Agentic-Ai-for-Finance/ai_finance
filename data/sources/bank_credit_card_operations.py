@@ -5,10 +5,6 @@ from typing import Any
 from urllib.parse import urlencode
 
 from data.models.bank_credit_card_operations import (
-    BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET,
-    BANK_CREDIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DATASET,
-    BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_PRIMARY_DATASET,
-    BANK_CREDIT_CARD_CARDS_WITH_OPERATIONS_SUPPLEMENTARY_DATASET,
     BankCreditCardOperationConfig,
     BankCreditCardCountObservation,
     BankCreditCardCountRawObservation,
@@ -64,7 +60,9 @@ def derive_institution_code(source_codigo: str) -> str:
         agifi_index = parts.index("AGIFI")
         institution_code = parts[agifi_index + 1]
     except (ValueError, IndexError) as exc:
-        raise ValueError(f"Cannot derive institution_code from {source_codigo}") from exc
+        raise ValueError(
+            f"Cannot derive institution_code from {source_codigo}"
+        ) from exc
 
     # Non-banking card tags use AGIFI_MRC and then append issuer/brand tokens.
     # Using plain MRC collapses many institutions into one key, so we derive a
@@ -157,14 +155,19 @@ def parse_transaction_count_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
     return sorted(
         observations,
-        key=lambda observation: (observation.institution_code, observation.period_month),
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
     )
 
 
@@ -200,14 +203,19 @@ def parse_card_count_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
     return sorted(
         observations,
-        key=lambda observation: (observation.institution_code, observation.period_month),
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
     )
 
 
@@ -245,14 +253,19 @@ def parse_nominal_volume_payload(
                     period_month=normalize_period_month(
                         _first_present(point, "Fecha", "fecha", "period", "Periodo")
                     ),
-                    value=parse_cmf_numeric(_first_present(point, "Valor", "valor", "value")),
+                    value=parse_cmf_numeric(
+                        _first_present(point, "Valor", "valor", "value")
+                    ),
                     source_payload=point,
                 )
             )
 
     return sorted(
         observations,
-        key=lambda observation: (observation.institution_code, observation.period_month),
+        key=lambda observation: (
+            observation.institution_code,
+            observation.period_month,
+        ),
     )
 
 

@@ -168,7 +168,10 @@ def test_load_active_checking_accounts_configs_groups_endpoint_rows():
     configs = load_active_checking_accounts_configs(sb)
 
     assert len(configs) == 1
-    assert configs[0].dataset_code == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    assert (
+        configs[0].dataset_code
+        == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    )
     assert configs[0].account_count_start_date == date(2009, 4, 1)
     assert configs[0].nominal_balance_start_date == date(2009, 4, 1)
 
@@ -216,7 +219,10 @@ def test_sync_checking_accounts_once_skips_when_source_is_unchanged(monkeypatch)
 
 
 def test_sync_checking_accounts_once_upserts_and_records_success(monkeypatch):
-    sb = FakeSupabase(curated=[{"period_month": "2026-03-01"}], uf_values={"2026-04-15": [{"value": "40000"}]})
+    sb = FakeSupabase(
+        curated=[{"period_month": "2026-03-01"}],
+        uf_values={"2026-04-15": [{"value": "40000"}]},
+    )
     events: list[str] = []
 
     async def _fake_batch(*_args, **_kwargs):

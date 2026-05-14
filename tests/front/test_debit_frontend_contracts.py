@@ -15,19 +15,20 @@ def test_debit_card_config_exposes_routes_and_supported_views():
     assert 'key: "supplementary-activation-rate"' not in src
 
 
-def test_debit_supabase_queries_target_debit_views():
+def test_debit_queries_use_api_proxy_routes():
     src = Path("front/lib/supabase-debit-queries.ts").read_text()
 
-    assert 'from("bank_debit_card_ops_metrics")' in src
-    assert 'from("bank_debit_card_operation_metrics")' in src
-    assert "METRICS_PAGE_SIZE = 1000" in src
+    assert "/api/v1/public/metrics?dataset=debit-card-ops" in src
+    assert "/api/v1/public/metrics?dataset=debit-card-activation" in src
+    assert '"/api/v1/protected/metrics"' in src
 
 
 def test_debit_routes_wire_to_operation_slug_model():
     page_src = Path("front/app/debit-cards/page.tsx").read_text()
     dynamic_src = Path("front/app/debit-cards/[operation]/page.tsx").read_text()
 
-    assert "/debit-cards/transactions" in page_src
+    assert 'section="debit-cards"' in page_src
+    assert "Debit Transactions" in page_src
     assert "operationFromSlug" in dynamic_src
     assert "DebitCardsDashboard" in dynamic_src
     assert "PlaceholderPanel" not in dynamic_src

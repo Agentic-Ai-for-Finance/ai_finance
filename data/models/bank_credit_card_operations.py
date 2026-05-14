@@ -21,13 +21,15 @@ CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS_SUPPLEMENTARY = (
     "cards_with_operations_supplementary"
 )
 CMF_MEASURE_KIND_ACTIVE_CARDS_NON_BANKING = "active_cards_non_banking"
-CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS_NON_BANKING = (
-    "cards_with_operations_non_banking"
-)
+CMF_MEASURE_KIND_CARDS_WITH_OPERATIONS_NON_BANKING = "cards_with_operations_non_banking"
 
 BANK_CREDIT_CARD_OPS_COMPRAS_DATASET = "bank_credit_card_ops_compras"
-BANK_CREDIT_CARD_OPS_AVANCE_EN_EFECTIVO_DATASET = "bank_credit_card_ops_avance_en_efectivo"
-BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_DATASET = "bank_credit_card_ops_cargos_por_servicio"
+BANK_CREDIT_CARD_OPS_AVANCE_EN_EFECTIVO_DATASET = (
+    "bank_credit_card_ops_avance_en_efectivo"
+)
+BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_DATASET = (
+    "bank_credit_card_ops_cargos_por_servicio"
+)
 BANK_CREDIT_CARD_OPS_COMPRAS_TRANSACTION_COUNT_DATASET = (
     "bank_credit_card_ops_compras_transaction_count"
 )
@@ -46,7 +48,9 @@ BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_TRANSACTION_COUNT_DATASET = (
 BANK_CREDIT_CARD_OPS_CARGOS_POR_SERVICIO_NOMINAL_VOLUME_DATASET = (
     "bank_credit_card_ops_cargos_por_servicio_nominal_volume"
 )
-BANK_CREDIT_CARD_OPS_NON_BANKING_COMPRAS_DATASET = "bank_credit_card_ops_non_banking_compras"
+BANK_CREDIT_CARD_OPS_NON_BANKING_COMPRAS_DATASET = (
+    "bank_credit_card_ops_non_banking_compras"
+)
 BANK_CREDIT_CARD_OPS_NON_BANKING_COMPRAS_TRANSACTION_COUNT_DATASET = (
     "bank_credit_card_ops_non_banking_compras_transaction_count"
 )
@@ -54,9 +58,7 @@ BANK_CREDIT_CARD_OPS_NON_BANKING_COMPRAS_NOMINAL_VOLUME_DATASET = (
     "bank_credit_card_ops_non_banking_compras_nominal_volume"
 )
 BANK_CREDIT_CARD_COUNTS_DATASET = "bank_credit_card_counts"
-BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET = (
-    "bank_credit_card_active_cards_primary"
-)
+BANK_CREDIT_CARD_ACTIVE_CARDS_PRIMARY_DATASET = "bank_credit_card_active_cards_primary"
 BANK_CREDIT_CARD_ACTIVE_CARDS_SUPPLEMENTARY_DATASET = (
     "bank_credit_card_active_cards_supplementary"
 )
@@ -244,7 +246,9 @@ class BankCreditCardOpsCuratedObservation:
             "real_value_uf": str(self.real_value_uf),
             "average_ticket_uf": str(self.average_ticket_uf),
             "total_active_cards": (
-                None if self.total_active_cards is None else str(self.total_active_cards)
+                None
+                if self.total_active_cards is None
+                else str(self.total_active_cards)
             ),
             "operations_per_active_card": (
                 None

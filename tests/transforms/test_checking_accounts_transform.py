@@ -46,7 +46,10 @@ def test_to_curated_checking_accounts_enriches_with_uf_and_average_balance():
 
     assert len(curated) == 1
     assert curated[0].account_type == "Natural Person Without Interest"
-    assert curated[0].dataset_code == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    assert (
+        curated[0].dataset_code
+        == CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    )
     assert curated[0].institution_code == "BICE"
     assert curated[0].nominal_balance_millions_clp == Decimal("120507.338")
     assert curated[0].uf_value_used == Decimal("40000")

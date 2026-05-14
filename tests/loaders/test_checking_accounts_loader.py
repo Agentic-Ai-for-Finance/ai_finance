@@ -133,23 +133,17 @@ def test_latest_curated_checking_accounts_month_returns_none_for_empty_table():
 def test_latest_curated_checking_accounts_month_reads_latest_row():
     sb = FakeSupabase(latest_curated=[{"period_month": "2026-04-01"}])
 
-    assert (
-        latest_curated_checking_accounts_month(
-            sb, dataset_code=CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
-        )
-        == date(2026, 4, 1)
-    )
+    assert latest_curated_checking_accounts_month(
+        sb, dataset_code=CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    ) == date(2026, 4, 1)
 
 
 def test_earliest_curated_checking_accounts_month_reads_first_row():
     sb = FakeSupabase(curated=[{"period_month": "2025-01-01"}])
 
-    assert (
-        earliest_curated_checking_accounts_month(
-            sb, dataset_code=CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
-        )
-        == date(2025, 1, 1)
-    )
+    assert earliest_curated_checking_accounts_month(
+        sb, dataset_code=CHECKING_ACCOUNTS_DATASET_NATURAL_PERSON_WITHOUT_INTEREST
+    ) == date(2025, 1, 1)
 
 
 def test_get_uf_value_for_date_returns_decimal_value():

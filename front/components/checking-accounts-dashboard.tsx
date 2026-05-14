@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BankSelector } from "@/components/bank-selector";
-import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard-states";
+import { EmptyState, ErrorState, LoadingState, LockedMetricState } from "@/components/dashboard-states";
 import { MetricLineChart } from "@/components/metric-line-chart";
+import { useOptionalAuth } from "@/lib/clerk-compat";
 import {
   getBankDisplayName,
   getCanonicalInstitution,
@@ -17,6 +18,7 @@ import {
   type CheckingAccountChartViewKey,
   type CheckingAccountOperationName,
 } from "@/lib/checking-account-config";
+import { requiresProtectedCheckingMetric } from "@/lib/dashboard-access";
 import {
   addMonths,
   buildMonthOptions,
@@ -35,6 +37,7 @@ import {
   fetchCheckingAccountMetrics,
 } from "@/lib/supabase-checking-account-queries";
 import { fetchLatestUfValue } from "@/lib/supabase-queries";
+import { useSavedBankPreferences } from "@/lib/user-bank-preferences";
 import { cn } from "@/lib/utils";
 
 type CheckingAccountsDashboardProps = {
@@ -67,6 +70,7 @@ export function CheckingAccountsDashboard({
   endMonthParam,
   ufParam,
 }: CheckingAccountsDashboardProps) {
+  const { isSignedIn } = useOptionalAuth();
   const initialMetricKey = isCheckingAccountChartViewKey(initialView)
     ? initialView
     : defaultCheckingAccountViewKey;
@@ -79,6 +83,9 @@ export function CheckingAccountsDashboard({
   const [isLoadingRows, setIsLoadingRows] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasSeededSelectionRef = useRef(false);
+  const { defaultInstitutionCodes } = useSavedBankPreferences("checking-accounts");
+  const requiresProtectedMetric = requiresProtectedCheckingMetric(viewKey);
+  const isMetricLocked = requiresProtectedMetric && !isSignedIn;
 
   useEffect(() => {
     setViewKey(isCheckingAccountChartViewKey(initialView) ? initialView : defaultCheckingAccountViewKey);
@@ -161,13 +168,21 @@ export function CheckingAccountsDashboard({
     let isCancelled = false;
 
     async function loadRows() {
+      if (isMetricLocked) {
+        setRows([]);
+        setIsLoadingRows(false);
+        setErrorMessage(null);
+        return;
+      }
+
       setIsLoadingRows(true);
       setErrorMessage(null);
       try {
         const nextRows = await fetchCheckingAccountMetrics(
           operation,
           `${startMonth}-01`,
-          `${endMonth}-01`
+          `${endMonth}-01`,
+          requiresProtectedMetric ? "protected" : "public"
         );
         if (!nextRows.length) {
           throw new Error("The selected time range returned no rows.");
@@ -191,7 +206,7 @@ export function CheckingAccountsDashboard({
     return () => {
       isCancelled = true;
     };
-  }, [endMonth, operation, startMonth]);
+  }, [endMonth, isMetricLocked, operation, requiresProtectedMetric, startMonth]);
 
   const activeUfValue = useMemo(() => {
     const parsed = Number(ufParam ?? "");
@@ -241,8 +256,13 @@ export function CheckingAccountsDashboard({
   }, [activeUfValue, mergedRows, months, viewKey]);
 
   const defaultSelectedBanks = useMemo(
-    () => computeDefaultSelectedBanks(bankSeries, latestLoadedMonth),
-    [bankSeries, latestLoadedMonth]
+    () =>
+      defaultInstitutionCodes.length
+        ? bankSeries
+            .filter((bank) => defaultInstitutionCodes.includes(bank.institutionCode))
+            .map((bank) => bank.institutionCode)
+        : computeDefaultSelectedBanks(bankSeries, latestLoadedMonth),
+    [bankSeries, defaultInstitutionCodes, latestLoadedMonth]
   );
 
   useEffect(() => {
@@ -451,6 +471,11 @@ export function CheckingAccountsDashboard({
           <p className="mt-4 max-w-none text-sm leading-6 text-muted sm:mt-5 sm:text-base sm:leading-7 lg:text-lg">
             Monthly checking-account analysis across banks with UF-adjusted CLP values for volume and average balance.
           </p>
+          {!isSignedIn ? (
+            <div className="mt-4 rounded-lg border border-amber-300/60 bg-amber-100/15 px-4 py-3 text-sm font-semibold text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.25)] sm:text-base">
+              Logged out view shows nominal values (not UF-deflated). Sign in to deflate with UF.
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -466,20 +491,32 @@ export function CheckingAccountsDashboard({
 
             <div className="flex flex-wrap items-center gap-2 pb-1">
               {checkingAccountChartViews.map((item, index, items) => (
+                (() => {
+                  const isTabLocked = !isSignedIn && requiresProtectedCheckingMetric(item.key);
+                  return (
                 <MetricTabButton
                   key={item.key}
                   active={viewKey === item.key}
+                  disabled={isTabLocked}
                   tooltipAlign={index === items.length - 1 ? "right" : "center"}
                   label={item.label}
                   description={item.description}
                   unitLabel={item.unitLabel}
-                  onClick={() => setViewKey(item.key)}
+                  onClick={() => {
+                    if (!isTabLocked) {
+                      setViewKey(item.key);
+                    }
+                  }}
                 />
+                  );
+                })()
               ))}
             </div>
           </div>
 
-          {isLoadingRows ? (
+          {isMetricLocked ? (
+            <LockedMetricState compact description={`Login to unlock ${activeMetric.label.toLowerCase()} for ${checkingAccountOperationLabelMap[operation]}.`} />
+          ) : isLoadingRows ? (
             <LoadingState label="Loading time series" compact />
           ) : selectedSeries.length ? (
             <MetricLineChart
@@ -509,6 +546,14 @@ export function CheckingAccountsDashboard({
         />
 
         <div className="border-t border-border pt-8">
+          {isMetricLocked ? (
+            <LockedMetricState
+              compact
+              title={`${activeMetric.label} stays locked while logged out`}
+              description="The metric pill remains visible, but the data table unlocks only after sign-in."
+            />
+          ) : (
+            <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
               <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
@@ -565,6 +610,8 @@ export function CheckingAccountsDashboard({
               </tbody>
             </table>
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -581,13 +628,16 @@ function getMetricValue(
   activeUfValue: number
 ): number | null {
   if (viewKey === "volume") {
-    return Number(row.real_balance_uf) * activeUfValue;
+    if (row.real_balance_uf) {
+      return Number(row.real_balance_uf) * activeUfValue;
+    }
+    return row.nominal_balance_millions_clp ? Number(row.nominal_balance_millions_clp) : null;
   }
   if (viewKey === "number-of-accounts") {
     return Number(row.account_count);
   }
   if (viewKey === "average-balance") {
-    return Number(row.average_balance_uf) * activeUfValue;
+    return row.average_balance_uf ? Number(row.average_balance_uf) * activeUfValue : null;
   }
   return null;
 }
@@ -611,8 +661,8 @@ function aggregateRows(rows: CheckingAccountMetricRow[]): CheckingAccountMetricR
     }
 
     const currentAccounts = Number(existing.account_count) + Number(row.account_count);
-    const currentNominal = Number(existing.nominal_balance_millions_clp) + Number(row.nominal_balance_millions_clp);
-    const currentRealUf = Number(existing.real_balance_uf) + Number(row.real_balance_uf);
+    const currentNominal = Number(existing.nominal_balance_millions_clp ?? 0) + Number(row.nominal_balance_millions_clp ?? 0);
+    const currentRealUf = Number(existing.real_balance_uf ?? 0) + Number(row.real_balance_uf ?? 0);
 
     grouped.set(key, {
       ...existing,
@@ -674,7 +724,7 @@ function calculateVsStart(startValue: number | null, currentValue: number | null
 function calculateSystemAverage(rows: CheckingAccountMetricRow[], activeUfValue: number) {
   const totals = rows.reduce(
     (accumulator, row) => {
-      accumulator.volume += Number(row.real_balance_uf) * activeUfValue;
+      accumulator.volume += Number(row.real_balance_uf ?? 0) * activeUfValue;
       accumulator.accounts += Number(row.account_count);
       return accumulator;
     },
@@ -697,6 +747,7 @@ function calculateSystemTotal(
 
 function MetricTabButton({
   active,
+  disabled = false,
   tooltipAlign,
   label,
   description,
@@ -704,6 +755,7 @@ function MetricTabButton({
   onClick,
 }: {
   active: boolean;
+  disabled?: boolean;
   tooltipAlign?: "center" | "right";
   label: string;
   description: string;
@@ -714,11 +766,15 @@ function MetricTabButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
       className={cn(
         "group/tab relative shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition",
-        active
-          ? "border-brand/60 bg-brand/10 text-white"
-          : "border-border bg-panelMuted text-muted hover:text-white"
+        disabled
+          ? "cursor-not-allowed border-border/70 bg-panelMuted/60 text-muted/70"
+          : active
+            ? "border-brand/60 bg-brand/10 text-white"
+            : "border-border bg-panelMuted text-muted hover:text-white"
       )}
     >
       <span className="inline-flex items-center gap-2">
@@ -729,12 +785,13 @@ function MetricTabButton({
           </span>
           <span
             className={cn(
-              "pointer-events-none absolute bottom-full z-30 mb-2 hidden w-80 max-w-[90vw] whitespace-normal break-words rounded-2xl border border-border bg-[#07101c] p-3 text-left text-xs leading-5 text-muted shadow-2xl group-hover/info:block group-focus-visible/info:block",
+              "pointer-events-none absolute bottom-full z-30 mb-2 hidden w-80 max-w-[90vw] whitespace-normal break-words rounded-2xl border border-border bg-[#07101c] p-3 text-left text-xs leading-5 text-muted shadow-2xl",
+              disabled ? "group-hover/tab:block group-focus-visible/tab:block" : "group-hover/info:block group-focus-visible/info:block",
               tooltipAlign === "right" ? "right-0" : "left-1/2 -translate-x-1/2"
             )}
           >
             <span className="block text-sm font-semibold text-white">{label}</span>
-            <span className="mt-1 block">{description}</span>
+            <span className="mt-1 block">{disabled ? "Need to sign in to deflate with UF." : description}</span>
             {unitLabel ? <span className="mt-1 block text-xs italic text-brand">{unitLabel}</span> : null}
           </span>
         </span>
