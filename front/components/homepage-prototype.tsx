@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { checkingAccountOperations } from "@/lib/checking-account-config";
 import { creditCardOperations } from "@/lib/credit-card-config";
 import {
@@ -64,86 +64,6 @@ const PRODUCTS = [
   },
 ] as const;
 
-const TICKER = [
-  ["CMR Falabella", "Volume", "+20,2%", "up"],
-  ["BCI", "Volume", "+8,7%", "up"],
-  ["Banco Itaú", "Volume", "+5,6%", "up"],
-  ["Banco de Chile", "Market Share", "-0,9 pp", "down"],
-  ["Santander", "Market Share", "-1,3 pp", "down"],
-  ["Scotiabank", "Activation", "+3,1 pp", "up"],
-  ["Banco Estado", "Checking", "+12,4%", "up"],
-  ["Tenpo", "Active Cards", "+41,8%", "up"],
-  ["Coopeuch", "Consumer Loans", "-2,1%", "down"],
-  ["Ripley", "Cash Advances", "+6,7%", "up"],
-] as const;
-
-type SnapshotCase = {
-  key: "credit" | "debit" | "prepaid" | "checking";
-  label: string;
-  tableLabel: string;
-  monthLabel: string;
-  rows: Array<{ institution: string; value: string; growth: string; share: string; trend: "up" | "down" }>;
-  total: { value: string; growth: string; share: string };
-};
-
-const SNAPSHOT_CASES: SnapshotCase[] = [
-  {
-    key: "credit",
-    label: "Credit / Purchases",
-    tableLabel: "Volume 02/26",
-    monthLabel: "Credit cards purchases snapshot · 02/26",
-    rows: [
-      { institution: "CMR Falabella", value: "$937.874", growth: "+20,2%", share: "24,4%", trend: "up" },
-      { institution: "Banco Santander", value: "$847.598", growth: "+1,2%", share: "22,1%", trend: "down" },
-      { institution: "Banco de Chile", value: "$618.529", growth: "+1,7%", share: "16,1%", trend: "down" },
-      { institution: "BCI", value: "$288.159", growth: "+8,7%", share: "7,5%", trend: "up" },
-      { institution: "Banco Itaú", value: "$217.111", growth: "+5,6%", share: "5,7%", trend: "down" },
-    ],
-    total: { value: "$3.839.569", growth: "+7,4%", share: "100,0%" },
-  },
-  {
-    key: "debit",
-    label: "Debit / Transactions",
-    tableLabel: "Transactions 02/26",
-    monthLabel: "Debit transactions snapshot · 02/26",
-    rows: [
-      { institution: "Banco Estado", value: "228.741.006", growth: "+9,8%", share: "38,7%", trend: "up" },
-      { institution: "Banco Santander", value: "91.420.501", growth: "+6,1%", share: "15,5%", trend: "up" },
-      { institution: "Banco de Chile", value: "74.300.442", growth: "+5,2%", share: "12,6%", trend: "up" },
-      { institution: "BCI", value: "63.510.208", growth: "+4,8%", share: "10,8%", trend: "up" },
-      { institution: "Banco Falabella", value: "21.204.899", growth: "+2,1%", share: "3,6%", trend: "down" },
-    ],
-    total: { value: "591.228.900", growth: "+6,9%", share: "100,0%" },
-  },
-  {
-    key: "prepaid",
-    label: "Prepaid / Purchases",
-    tableLabel: "Volume 02/26",
-    monthLabel: "Prepaid purchases snapshot · 02/26",
-    rows: [
-      { institution: "Tenpo", value: "$61.442", growth: "+41,8%", share: "42,9%", trend: "up" },
-      { institution: "Mach", value: "$38.070", growth: "+18,3%", share: "26,6%", trend: "up" },
-      { institution: "Los Héroes", value: "$19.668", growth: "+12,2%", share: "13,7%", trend: "up" },
-      { institution: "Caja Los Andes", value: "$13.004", growth: "+7,5%", share: "9,1%", trend: "up" },
-      { institution: "Tapp", value: "$6.113", growth: "-2,4%", share: "4,3%", trend: "down" },
-    ],
-    total: { value: "$143.219", growth: "+21,5%", share: "100,0%" },
-  },
-  {
-    key: "checking",
-    label: "Checking / Natural Without Interest",
-    tableLabel: "Number of Accounts 02/26",
-    monthLabel: "Checking accounts (natural without interest) · 02/26",
-    rows: [
-      { institution: "Banco Estado", value: "15.208.410", growth: "+8,9%", share: "43,5%", trend: "up" },
-      { institution: "Banco de Chile", value: "4.632.870", growth: "+5,0%", share: "13,2%", trend: "up" },
-      { institution: "Banco Santander", value: "4.218.903", growth: "+4,6%", share: "12,1%", trend: "up" },
-      { institution: "BCI", value: "2.808.116", growth: "+3,9%", share: "8,0%", trend: "up" },
-      { institution: "Banco Falabella", value: "1.688.021", growth: "+1,4%", share: "4,8%", trend: "down" },
-    ],
-    total: { value: "34.973.055", growth: "+6,2%", share: "100,0%" },
-  },
-];
 
 type LivePulseCase = {
   product: string;
@@ -390,37 +310,13 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
   );
 }
 
-function TickerStrip() {
-  const items = [...TICKER, ...TICKER];
-
-  return (
-    <div className="overflow-hidden border-y border-[var(--home-rule)] bg-[var(--home-surface)]">
-      <div className="border-b border-[var(--home-rule)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)] sm:px-6">
-        Credit Cards · Purchases · Latest month 02/26
-      </div>
-      <div className="home-ticker flex w-max gap-10 py-3 font-[family:var(--font-home-mono)] text-[12px]">
-        {items.map((item, index) => (
-          <div key={`${item[0]}-${index}`} className="flex items-center gap-3 whitespace-nowrap">
-            <span className="text-[var(--home-muted)]">{item[0]}</span>
-            <span className="text-white/50">/ {item[1]}</span>
-            <span className={item[3] === "up" ? "text-[var(--home-mint)]" : "text-[var(--home-pink)]"}>
-              {item[3] === "up" ? "▲" : "▼"} {item[2]}
-            </span>
-            <span className="text-[var(--home-rule)]">·</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function MiniChart() {
   const series = [
-    { name: "CMR Falabella", color: "var(--home-mint)", points: [78, 92, 88, 86, 95, 90, 88, 93, 96, 100, 92, 86, 84] },
-    { name: "Santander", color: "var(--home-amber)", points: [70, 80, 78, 75, 82, 80, 78, 80, 86, 88, 82, 80, 78] },
-    { name: "Banco de Chile", color: "var(--home-pink)", points: [55, 62, 60, 58, 60, 58, 56, 60, 64, 68, 62, 58, 56] },
-    { name: "BCI", color: "var(--home-muted)", points: [28, 30, 30, 29, 32, 30, 29, 31, 32, 34, 32, 30, 29] },
-    { name: "Banco Itaú", color: "var(--home-rule)", points: [22, 23, 23, 22, 24, 23, 22, 23, 24, 25, 23, 22, 21] },
+    { name: "Banco Estado", color: "var(--home-mint)", points: [85, 86, 87, 88, 89, 90, 91, 92, 92, 93, 94, 95, 96] },
+    { name: "Banco Santander", color: "var(--home-amber)", points: [72, 73, 74, 75, 76, 76, 77, 78, 79, 80, 81, 82, 83] },
+    { name: "Banco de Chile", color: "var(--home-pink)", points: [64, 64, 65, 66, 66, 67, 67, 68, 69, 69, 70, 71, 71] },
+    { name: "BCI", color: "var(--home-mint)", points: [52, 53, 53, 54, 55, 55, 56, 56, 57, 58, 58, 59, 60] },
+    { name: "Banco Falabella", color: "var(--home-amber)", points: [31, 31, 32, 33, 33, 34, 35, 35, 36, 37, 38, 39, 40] },
   ] as const;
   const width = 720;
   const height = 280;
@@ -490,6 +386,15 @@ function MiniChart() {
             const y = padding.top + (height - padding.top - padding.bottom) * (1 - value / maxValue);
             return <circle key={pointIndex} cx={x} cy={y} r={2} fill={line.color} />;
           })}
+          <text
+            x={width - padding.right + 6}
+            y={padding.top + (height - padding.top - padding.bottom) * (1 - line.points[line.points.length - 1] / maxValue) + 3}
+            fontSize="9"
+            fill={line.color}
+            fontFamily="var(--font-home-mono)"
+          >
+            {line.name}
+          </text>
         </g>
       ))}
     </svg>
@@ -514,7 +419,7 @@ function HeroSection() {
           <dl className="mt-12 grid grid-cols-1 gap-px bg-[var(--home-rule)] sm:grid-cols-3">
             {[
               ["20+", "Institutions"],
-              ["204", "Months"],
+              ["17", "Years of data"],
               ["UF", "Deflated"],
             ].map(([key, value]) => (
               <div key={value} className="bg-[var(--home-background)] p-5">
@@ -534,10 +439,10 @@ function HeroSection() {
             <div className="flex items-center justify-between border-b border-[var(--home-rule)] px-5 py-3">
               <div>
                 <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-                  Volume / Purchases · MM CLP UF-adj
+                  Total Active Cards · Monthly trend
                 </div>
                 <div className="mt-1 font-[family:var(--font-home-display)] text-lg text-[var(--home-foreground)]">
-                  Top 5 issuers · 02/25 → 02/26
+                  Top issuers · 02/25 → 02/26
                 </div>
               </div>
             </div>
@@ -551,104 +456,11 @@ function HeroSection() {
   );
 }
 
-function RankingSection() {
-  const [activeCaseKey, setActiveCaseKey] = useState<SnapshotCase["key"]>("credit");
-  const activeCase = SNAPSHOT_CASES.find((item) => item.key === activeCaseKey) ?? SNAPSHOT_CASES[0];
-
-  return (
-    <section id="credit" className="border-b border-[var(--home-rule)] py-14 sm:py-16">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-12 lg:col-span-4">
-            <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
-              02 — Snapshot
-            </div>
-            <h2 className="mt-4 font-[family:var(--font-home-display)] text-4xl leading-tight text-[var(--home-foreground)] md:text-5xl">
-              Who leads this month,
-              <span className="italic text-[var(--home-muted)]"> and by how much.</span>
-            </h2>
-            <div className="mt-8 flex flex-wrap gap-2">
-              {SNAPSHOT_CASES.map((snapshotCase) => (
-                <button
-                  key={snapshotCase.key}
-                  type="button"
-                  onClick={() => setActiveCaseKey(snapshotCase.key)}
-                  className={`rounded-full border px-4 py-2 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.16em] transition-colors ${
-                    activeCase.key === snapshotCase.key
-                      ? "border-[var(--home-mint)] bg-[var(--home-mint)] text-[var(--home-background)]"
-                      : "border-[var(--home-rule)] text-[var(--home-muted)] hover:text-[var(--home-foreground)]"
-                  }`}
-                >
-                  {snapshotCase.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-5 text-[11px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-              {activeCase.monthLabel}
-            </p>
-          </div>
-
-          <div className="col-span-12 lg:col-span-8">
-            <div className="border border-[var(--home-rule)]">
-              <div className="grid grid-cols-12 gap-4 border-b border-[var(--home-rule)] bg-[var(--home-surface)] px-5 py-3 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--home-muted)]">
-                <div className="col-span-1">#</div>
-                <div className="col-span-4">Institution</div>
-                <div className="col-span-3 text-right">{activeCase.tableLabel}</div>
-                <div className="col-span-2 text-right">YoY</div>
-                <div className="col-span-2 text-right">Share</div>
-              </div>
-              {activeCase.rows.map((row, index) => {
-                const width = parseFloat(row.share.replace(",", "."));
-                return (
-                  <div
-                    key={`${activeCase.key}-${row.institution}`}
-                    className="relative grid grid-cols-12 items-center gap-4 border-b border-[var(--home-rule)] px-5 py-4 last:border-b-0 transition-colors hover:bg-[var(--home-surface)]"
-                  >
-                    <div
-                      className="absolute inset-y-0 left-0 bg-[var(--home-mint)]/10"
-                      style={{ width: `${width * 3}%` }}
-                    />
-                    <div className="relative col-span-1 font-[family:var(--font-home-mono)] text-[11px] text-[var(--home-muted)]">
-                      0{index + 1}
-                    </div>
-                    <div className="relative col-span-4 font-[family:var(--font-home-display)] text-lg text-[var(--home-foreground)]">
-                      {row.institution}
-                    </div>
-                    <div className="relative col-span-3 text-right font-[family:var(--font-home-mono)] text-sm text-[var(--home-foreground)]">
-                      {row.value}
-                    </div>
-                    <div
-                      className={`relative col-span-2 text-right font-[family:var(--font-home-mono)] text-sm ${
-                        row.trend === "up" ? "text-[var(--home-mint)]" : "text-[var(--home-pink)]"
-                      }`}
-                    >
-                      {row.growth}
-                    </div>
-                    <div className="relative col-span-2 text-right font-[family:var(--font-home-mono)] text-sm text-[var(--home-foreground)]">
-                      {row.share}
-                    </div>
-                  </div>
-                );
-              })}
-              <div className="grid grid-cols-12 gap-4 bg-[var(--home-surface)] px-5 py-3 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-wider text-[var(--home-muted)]">
-                <div className="col-span-5">System total</div>
-                <div className="col-span-3 text-right text-[var(--home-foreground)]">{activeCase.total.value}</div>
-                <div className="col-span-2 text-right text-[var(--home-mint)]">{activeCase.total.growth}</div>
-                <div className="col-span-2 text-right text-[var(--home-foreground)]">{activeCase.total.share}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function ProductsSection() {
   return (
     <section className="border-b border-[var(--home-rule)] py-14 sm:py-16">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <div className="mb-12 flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
+        <div className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
             <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
               03 — Coverage
@@ -664,12 +476,12 @@ function ProductsSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-px bg-[var(--home-rule)] md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           {PRODUCTS.map((product) => (
             <Link
               key={product.id}
               href={product.href}
-              className="group relative flex flex-col justify-between bg-[var(--home-background)] p-6 transition-colors hover:bg-[var(--home-surface)]"
+              className="group relative flex h-full flex-col justify-between rounded-2xl border border-[var(--home-rule)] bg-[color:rgb(12_24_41_/_0.78)] p-6 transition-all hover:-translate-y-1 hover:border-[var(--home-mint)] hover:bg-[var(--home-surface)]"
             >
               <div>
                 <div className="flex items-start justify-between">
@@ -693,10 +505,15 @@ function ProductsSection() {
                   </li>
                 ))}
               </ul>
-              <div
-                className="mt-8 h-1 origin-left scale-x-50 transition-transform group-hover:scale-x-100"
-                style={{ background: product.accent }}
-              />
+              <div className="mt-8 flex items-center justify-between">
+                <div
+                  className="h-1 w-16 origin-left transition-all group-hover:w-24"
+                  style={{ background: product.accent }}
+                />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--home-muted)]">
+                  Explore →
+                </span>
+              </div>
             </Link>
           ))}
         </div>
@@ -781,11 +598,16 @@ function WorkflowSection() {
 
 function LivePulseSection() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % LIVE_PULSE_CASES.length);
-    }, 2400);
+      setIsVisible(false);
+      window.setTimeout(() => {
+        setActiveIndex((current) => (current + 1) % LIVE_PULSE_CASES.length);
+        setIsVisible(true);
+      }, 220);
+    }, 2800);
 
     return () => window.clearInterval(intervalId);
   }, []);
@@ -812,7 +634,11 @@ function LivePulseSection() {
           </div>
 
           <div className="grid grid-cols-1 gap-px bg-[var(--home-rule)] md:grid-cols-3">
-            <div className="bg-[var(--home-background)] px-6 py-5">
+            <div
+              className={`bg-[var(--home-background)] px-6 py-5 transition-all duration-300 ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+              }`}
+            >
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
                 Product
               </div>
@@ -820,7 +646,11 @@ function LivePulseSection() {
                 {activeCase.product}
               </div>
             </div>
-            <div className="bg-[var(--home-background)] px-6 py-5">
+            <div
+              className={`bg-[var(--home-background)] px-6 py-5 transition-all duration-300 ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+              }`}
+            >
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
                 Volume
               </div>
@@ -828,7 +658,11 @@ function LivePulseSection() {
                 {activeCase.volume}
               </div>
             </div>
-            <div className="bg-[var(--home-background)] px-6 py-5">
+            <div
+              className={`bg-[var(--home-background)] px-6 py-5 transition-all duration-300 ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+              }`}
+            >
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
                 Growth YoY
               </div>
@@ -959,10 +793,8 @@ export function HomepagePrototype({
   return (
     <div className="min-h-screen bg-[var(--home-background)] text-[var(--home-foreground)]">
       <HomeNav navStyle={navStyle} homeHref={homeHref} />
-      <TickerStrip />
       <main>
         <HeroSection />
-        <RankingSection />
         <ProductsSection />
         <WorkflowSection />
         <LivePulseSection />
