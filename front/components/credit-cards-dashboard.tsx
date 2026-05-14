@@ -721,6 +721,11 @@ export function CreditCardsDashboard({
           <p className="mt-4 max-w-none text-sm leading-6 text-muted sm:mt-5 sm:text-base sm:leading-7 lg:text-lg">
             Monthly credit-card analysis across banks, with UF-adjusted CLP values for volume and ticket metrics, plus the active-card and activation-rate views.
           </p>
+          {!isSignedIn ? (
+            <div className="mt-4 rounded-lg border border-amber-300/60 bg-amber-100/15 px-4 py-3 text-sm font-semibold text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.25)] sm:text-base">
+              Logged out view shows nominal values (not UF-deflated). Sign in to deflate with UF.
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -889,7 +894,10 @@ function getOperationMetricValue(
   activeUfValue: number
 ): number | null {
   if (viewKey === "volume") {
-    return row.real_value_uf ? Number(row.real_value_uf) * activeUfValue : null;
+    if (row.real_value_uf) {
+      return Number(row.real_value_uf) * activeUfValue;
+    }
+    return row.nominal_volume_millions_clp ? Number(row.nominal_volume_millions_clp) : null;
   }
   if (viewKey === "transactions") {
     return Number(row.transaction_count);
@@ -1091,7 +1099,7 @@ function MetricTabButton({
             )}
           >
             <span className="block text-sm font-semibold text-white">{label}</span>
-            <span className="mt-1 block">{disabled ? "Must login to see this data" : description}</span>
+            <span className="mt-1 block">{disabled ? "Need to sign in to deflate with UF." : description}</span>
             {unitLabel ? <span className="mt-1 block text-xs italic text-brand">{unitLabel}</span> : null}
           </span>
         </span>
