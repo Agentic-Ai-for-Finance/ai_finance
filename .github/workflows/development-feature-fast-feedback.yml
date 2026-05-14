@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - development-*
+      - release-*
     paths-ignore:
       - AGENTS.md
       - README.md
@@ -18,7 +19,7 @@ concurrency:
 
 jobs:
   feature_push_fast_feedback:
-    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'development-') }}
+    if: ${{ github.event_name == 'push' && (startsWith(github.ref_name, 'development-') || startsWith(github.ref_name, 'release-')) }}
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 45
