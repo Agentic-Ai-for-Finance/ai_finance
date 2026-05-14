@@ -32,3 +32,25 @@ def test_debit_routes_wire_to_operation_slug_model():
     assert "operationFromSlug" in dynamic_src
     assert "DebitCardsDashboard" in dynamic_src
     assert "PlaceholderPanel" not in dynamic_src
+
+
+def test_credit_and_debit_operation_metrics_links_default_to_total_active_cards():
+    shell_src = Path("front/components/app-shell.tsx").read_text()
+    sidebar_src = Path("front/components/credit-card-sidebar.tsx").read_text()
+
+    assert (
+        'item.slug === "total-activation-rate" ? defaultOperationsRateViewKey : defaultViewKey'
+        in shell_src
+    )
+    assert (
+        'item.slug === "total-activation-rate" ? defaultDebitOperationsRateViewKey : defaultDebitViewKey'
+        in shell_src
+    )
+    assert (
+        'slug === "total-activation-rate" ? defaultOperationsRateViewKey : defaultViewKey'
+        in sidebar_src
+    )
+    assert (
+        'slug === "total-activation-rate" ? defaultDebitOperationsRateViewKey : defaultDebitViewKey'
+        in sidebar_src
+    )
