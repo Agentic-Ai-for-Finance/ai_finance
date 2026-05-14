@@ -320,21 +320,6 @@ function MiniChart({ bars }: { bars: HeroBar[] }) {
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full">
-      {[0, 0.25, 0.5, 0.75, 1].map((grid) => {
-        const x = padding.left + trackWidth * grid;
-        return (
-          <g key={grid}>
-            <line
-              x1={x}
-              x2={x}
-              y1={padding.top}
-              y2={height - padding.bottom}
-              stroke="var(--home-rule)"
-              strokeDasharray="2 4"
-            />
-          </g>
-        );
-      })}
       {safeBars.map((bar, index) => {
         const y = padding.top + index * rowHeight + (rowHeight - barHeight) / 2;
         const barWidth = (bar.value / maxValue) * trackWidth;
@@ -354,7 +339,7 @@ function MiniChart({ bars }: { bars: HeroBar[] }) {
             <text
               x={padding.left + barWidth / 2}
               y={y + barHeight / 2 + 4}
-              fontSize="10"
+              fontSize="14"
               fill="var(--home-background)"
               fontFamily="var(--font-home-mono)"
               textAnchor="middle"
@@ -363,31 +348,14 @@ function MiniChart({ bars }: { bars: HeroBar[] }) {
             </text>
             <text
               x={padding.left + barWidth + 8}
-              y={y + barHeight / 2 + 4}
-              fontSize="10"
+              y={y + barHeight / 2 + 5}
+              fontSize="12"
               fill="var(--home-foreground)"
               fontFamily="var(--font-home-mono)"
             >
               {bar.name} ({bar.growth})
             </text>
           </g>
-        );
-      })}
-      {[0, 0.25, 0.5, 0.75, 1].map((grid) => {
-        const x = padding.left + trackWidth * grid;
-        const value = Math.round(maxValue * grid);
-        return (
-          <text
-            key={`tick-${grid}`}
-            x={x}
-            y={height - 5}
-            fontSize="9"
-            fill="var(--home-muted)"
-            fontFamily="var(--font-home-mono)"
-            textAnchor={grid === 0 ? "start" : grid === 1 ? "end" : "middle"}
-          >
-            {`$${value.toLocaleString("de-DE")}`}
-          </text>
         );
       })}
     </svg>
@@ -406,8 +374,10 @@ function HeroSection({
       <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-12 sm:px-6 md:py-14">
         <div className="col-span-12 lg:col-span-7 lg:pr-10">
           <h1 className="font-[family:var(--font-home-display)] text-[clamp(2.6rem,6.5vw,5.4rem)] leading-[0.95] tracking-tight text-[var(--home-foreground)]">
-            The banking benchmark,
-            <span className="italic text-[var(--home-mint)]"> without downloading</span> a single file
+            <span className="text-[var(--home-mint)]">Instant benchmark for Chilean banking,</span>
+            <span className="mt-3 block text-[clamp(1.9rem,4.8vw,3.4rem)] leading-[1.02] text-[var(--home-foreground)]">
+              without downloading a single file
+            </span>
           </h1>
           <p className="mt-8 max-w-xl text-base leading-relaxed text-[var(--home-muted)]">
             What used to mean downloading spreadsheets, normalizing UF, cleaning issuer names, and
@@ -704,8 +674,7 @@ function FooterSection() {
             <span className="h-1.5 w-1.5 bg-[var(--home-mint)]" />
           </div>
           <p className="mt-4 max-w-sm text-sm text-[var(--home-muted)]">
-            Instant benchmark for Chilean banking. Public CMF data, normalized, UF-adjusted, and
-            presented in the same product shell as the main app.
+            Instant benchmark for Chilean banking.
           </p>
         </div>
 
@@ -724,26 +693,6 @@ function FooterSection() {
           </ul>
         </div>
 
-        <div className="col-span-6 md:col-span-2">
-          <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-            Method
-          </div>
-          <ul className="mt-4 space-y-2 text-sm text-[var(--home-foreground)]">
-            <li>UF-adjusted values</li>
-            <li>API-first frontend</li>
-            <li>Protected derived metrics</li>
-          </ul>
-        </div>
-
-        <div className="col-span-12 md:col-span-3">
-          <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-            Prototype note
-          </div>
-          <p className="mt-4 text-sm leading-relaxed text-[var(--home-muted)]">
-            This first pass is presentation-only. The next step is wiring each section into the
-            existing secured API layer inside `front/app/api/v1`.
-          </p>
-        </div>
       </div>
       <div className="mt-8 border-t border-[var(--home-rule)]">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-5 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
