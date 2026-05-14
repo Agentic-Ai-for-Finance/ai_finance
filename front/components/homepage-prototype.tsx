@@ -70,7 +70,7 @@ const LIVE_PULSE_CASES: LivePulseCase[] = [
   { product: "Credit Cards / Purchases", volume: "$3.839.569 MM CLP", growth: "+7,4%" },
   { product: "Debit Cards / Debit Transactions", volume: "591.228.900 Transactions", growth: "+6,9%" },
   { product: "Prepaid Cards / Purchases", volume: "$143.219 MM CLP", growth: "+21,5%" },
-  { product: "Checking / Natural Without Interest", volume: "34.973.055 Accounts", growth: "+6,2%" },
+  { product: "Checking Accounts / Natural Without Interest", volume: "34.973.055 Accounts", growth: "+6,2%" },
 ];
 
 type HomepagePrototypeProps = {
@@ -203,8 +203,7 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
                     {item.label}
                   </Link>
                   {dropdownItems.length > 0 ? (
-                    <div className="pointer-events-none absolute left-1/2 top-full z-40 hidden w-72 -translate-x-1/2 pt-1 group-hover:block group-focus-within:block">
-                      <div className="h-2 w-full" />
+                    <div className="pointer-events-none absolute left-0 top-full z-40 hidden w-72 group-hover:block group-focus-within:block">
                       <div className="pointer-events-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
                         {dropdownItems.map((dropdownItem) => (
                           <Link
@@ -307,92 +306,99 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
 }
 
 function MiniChart() {
-  const series = [
-    { name: "Banco Estado", color: "var(--home-mint)", points: [85, 86, 87, 88, 89, 90, 91, 92, 92, 93, 94, 95, 96] },
-    { name: "Banco Santander", color: "var(--home-amber)", points: [72, 73, 74, 75, 76, 76, 77, 78, 79, 80, 81, 82, 83] },
-    { name: "Banco de Chile", color: "var(--home-pink)", points: [64, 64, 65, 66, 66, 67, 67, 68, 69, 69, 70, 71, 71] },
-    { name: "BCI", color: "var(--home-mint)", points: [52, 53, 53, 54, 55, 55, 56, 56, 57, 58, 58, 59, 60] },
-    { name: "Banco Falabella", color: "var(--home-amber)", points: [31, 31, 32, 33, 33, 34, 35, 35, 36, 37, 38, 39, 40] },
+  const issuerData = [
+    { name: "Banco de Chile", color: "var(--home-mint)", value: 58400, growth: "+4,2%" },
+    { name: "Banco Santander", color: "var(--home-amber)", value: 54900, growth: "+3,6%" },
+    { name: "BCI", color: "var(--home-pink)", value: 52100, growth: "+2,8%" },
+    { name: "Banco Estado", color: "var(--home-mint)", value: 46700, growth: "+2,1%" },
+    { name: "Banco Falabella", color: "var(--home-amber)", value: 39300, growth: "+5,0%" },
+    { name: "Scotiabank", color: "var(--home-pink)", value: 35800, growth: "+3,3%" },
+    { name: "Banco BICE", color: "var(--home-mint)", value: 33400, growth: "+1,9%" },
+    { name: "Banco Itaú", color: "var(--home-amber)", value: 31600, growth: "+2,4%" },
+    { name: "Banco Ripley", color: "var(--home-pink)", value: 28200, growth: "+4,6%" },
+    { name: "CMR Falabella", color: "var(--home-mint)", value: 24700, growth: "+6,1%" },
   ] as const;
+  const bars = [...issuerData].sort((a, b) => b.value - a.value).slice(0, 8);
   const width = 720;
-  const height = 280;
-  const padding = { left: 36, right: 12, top: 16, bottom: 28 };
-  const maxValue = 105;
-  const step = (width - padding.left - padding.right) / 12;
-  const months = ["02/25", "04/25", "06/25", "08/25", "10/25", "12/25", "02/26"];
-  const pathFor = (points: readonly number[]) =>
-    points
-      .map((value, index) => {
-        const x = padding.left + index * step;
-        const y = padding.top + (height - padding.top - padding.bottom) * (1 - value / maxValue);
-        return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-      })
-      .join(" ");
+  const height = 520;
+  const padding = { left: 20, right: 220, top: 18, bottom: 18 };
+  const maxValue = Math.max(...bars.map((bar) => bar.value));
+  const trackWidth = width - padding.left - padding.right;
+  const rowHeight = (height - padding.top - padding.bottom) / bars.length;
+  const barHeight = Math.min(24, rowHeight * 0.58);
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full">
-      {[0, 0.25, 0.5, 0.75, 1].map((grid, index) => {
-        const y = padding.top + (height - padding.top - padding.bottom) * grid;
+      {[0, 0.25, 0.5, 0.75, 1].map((grid) => {
+        const x = padding.left + trackWidth * grid;
         return (
-          <g key={index}>
+          <g key={grid}>
             <line
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={y}
-              y2={y}
+              x1={x}
+              x2={x}
+              y1={padding.top}
+              y2={height - padding.bottom}
               stroke="var(--home-rule)"
               strokeDasharray="2 4"
             />
+          </g>
+        );
+      })}
+      {bars.map((bar, index) => {
+        const y = padding.top + index * rowHeight + (rowHeight - barHeight) / 2;
+        const barWidth = (bar.value / maxValue) * trackWidth;
+        return (
+          <g key={bar.name}>
+            <rect x={padding.left} y={y} width={trackWidth} height={barHeight} fill="var(--home-surface)" rx={3} />
+            <rect
+              x={padding.left}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              fill={bar.color}
+              rx={3}
+              className="home-draw-line"
+              style={{ animationDelay: `${index * 0.09}s` }}
+            />
             <text
-              x={6}
-              y={y + 3}
-              fontSize="9"
-              fill="var(--home-muted)"
+              x={padding.left + barWidth / 2}
+              y={y + barHeight / 2 + 4}
+              fontSize="10"
+              fill="var(--home-background)"
+              fontFamily="var(--font-home-mono)"
+              textAnchor="middle"
+            >
+              {`$${bar.value.toLocaleString("de-DE")}`}
+            </text>
+            <text
+              x={padding.left + barWidth + 8}
+              y={y + barHeight / 2 + 4}
+              fontSize="10"
+              fill="var(--home-foreground)"
               fontFamily="var(--font-home-mono)"
             >
-              ${(((1 - grid) * maxValue) | 0) * 15}k
+              {bar.name} ({bar.growth})
             </text>
           </g>
         );
       })}
-      {months.map((month, index) => (
-        <text
-          key={month}
-          x={padding.left + index * step * 2}
-          y={height - 10}
-          fontSize="9"
-          fill="var(--home-muted)"
-          fontFamily="var(--font-home-mono)"
-        >
-          {month}
-        </text>
-      ))}
-      {series.map((line, index) => (
-        <g key={line.name}>
-          <path
-            d={pathFor(line.points)}
-            fill="none"
-            stroke={line.color}
-            strokeWidth={1.6}
-            className="home-draw-line"
-            style={{ animationDelay: `${index * 0.15}s` }}
-          />
-          {line.points.map((value, pointIndex) => {
-            const x = padding.left + pointIndex * step;
-            const y = padding.top + (height - padding.top - padding.bottom) * (1 - value / maxValue);
-            return <circle key={pointIndex} cx={x} cy={y} r={2} fill={line.color} />;
-          })}
+      {[0, 0.25, 0.5, 0.75, 1].map((grid) => {
+        const x = padding.left + trackWidth * grid;
+        const value = Math.round(maxValue * grid);
+        return (
           <text
-            x={width - padding.right + 6}
-            y={padding.top + (height - padding.top - padding.bottom) * (1 - line.points[line.points.length - 1] / maxValue) + 3}
+            key={`tick-${grid}`}
+            x={x}
+            y={height - 5}
             fontSize="9"
-            fill={line.color}
+            fill="var(--home-muted)"
             fontFamily="var(--font-home-mono)"
+            textAnchor={grid === 0 ? "start" : grid === 1 ? "end" : "middle"}
           >
-            {line.name}
+            {`$${value.toLocaleString("de-DE")}`}
           </text>
-        </g>
-      ))}
+        );
+      })}
     </svg>
   );
 }
@@ -400,7 +406,6 @@ function MiniChart() {
 function HeroSection() {
   return (
     <section className="relative flex min-h-[calc(100vh-4rem)] items-center border-b border-[var(--home-rule)]">
-      <div className="home-grid-glow pointer-events-none absolute inset-0" />
       <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-12 sm:px-6 md:py-14">
         <div className="col-span-12 lg:col-span-7 lg:pr-10">
           <h1 className="font-[family:var(--font-home-display)] text-[clamp(2.6rem,6.5vw,5.4rem)] leading-[0.95] tracking-tight text-[var(--home-foreground)]">
@@ -430,19 +435,19 @@ function HeroSection() {
           </dl>
         </div>
 
-        <div className="col-span-12 mt-10 lg:col-span-5 lg:mt-0">
-          <div className="relative border border-[var(--home-rule)] bg-[var(--home-surface)]">
+        <div className="col-span-12 mt-10 lg:col-span-5 lg:mt-0 lg:flex">
+          <div className="relative flex w-full flex-col border border-[var(--home-rule)] bg-[var(--home-surface)]">
             <div className="flex items-center justify-between border-b border-[var(--home-rule)] px-5 py-3">
               <div>
                 <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-                  Total Active Cards · Monthly trend
+                  February 2026
                 </div>
                 <div className="mt-1 font-[family:var(--font-home-display)] text-lg text-[var(--home-foreground)]">
-                  Top issuers · 02/25 → 02/26
+                  Average Purchase with Credit Card and Growth YoY
                 </div>
               </div>
             </div>
-            <div className="aspect-[720/280] w-full">
+            <div className="w-full flex-1">
               <MiniChart />
             </div>
           </div>
@@ -557,7 +562,7 @@ function WorkflowSection() {
               </ol>
             </div>
             <div className="bg-[var(--home-background)] p-8">
-              <div className="flex items-center gap-3 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--home-mint)]">
+              <div className="flex items-center gap-3 font-[family:var(--font-home-mono)] text-[13px] font-semibold uppercase tracking-[0.16em] text-[var(--home-mint)]">
                 <span className="h-1.5 w-6 bg-[var(--home-mint)]" />
                 With Taclaro
               </div>
@@ -622,16 +627,16 @@ function LivePulseSection() {
           ].map((item, index) => (
             <div
               key={item.label}
-              className={`relative overflow-hidden bg-[var(--home-background)] px-6 py-7 transition-all duration-500 ${
+              className={`relative flex h-[188px] flex-col items-center justify-center overflow-hidden bg-[var(--home-background)] px-6 py-7 transition-all duration-500 ${
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
               }`}
               style={{ transitionDelay: `${index * 60}ms` }}
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--home-mint),transparent)] opacity-70" />
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
+              <div className="absolute left-0 right-0 top-8 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
                 {item.label}
               </div>
-              <div className={`mt-4 text-2xl font-semibold sm:text-3xl ${item.tone}`}>
+              <div className={`text-center text-2xl font-semibold leading-[1.12] sm:text-3xl ${item.tone}`}>
                 {item.value}
               </div>
             </div>
