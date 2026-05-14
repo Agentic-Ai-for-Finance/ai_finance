@@ -1,20 +1,24 @@
-import {
-  getCanonicalInstitution,
-  isLikelyNonBankingInstitution,
-  isTenpoInstitution,
-} from "@/lib/bank-presentation";
-import { formatMoney, formatMonthLabel, formatPercent, getChileTodayIso } from "@/lib/formatters";
+import { formatMoney, formatMonthLabel } from "@/lib/formatters";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 type CreditMetricRow = {
   operation_type: "Compras" | "Avance en Efectivo" | "Cargos por Servicio";
-  institution_code: string;
-  institution_name: string;
   period_month: string;
-  real_value_uf: string | null;
-  transaction_count: string | null;
-  source_dataset_code?: string | null;
+  nominal_volume_millions_clp: string | null;
 };
+
+const HERO_MOCK_BANKS = [
+  { name: "Bank 1", value: 98120, growth: "+7,2%" },
+  { name: "Bank 2", value: 90450, growth: "+5,9%" },
+  { name: "Bank 3", value: 86210, growth: "+4,8%" },
+  { name: "Bank 4", value: 80170, growth: "+4,1%" },
+  { name: "Bank 5", value: 74430, growth: "+3,7%" },
+  { name: "Bank 6", value: 68910, growth: "+3,1%" },
+  { name: "Bank 7", value: 64080, growth: "+2,8%" },
+  { name: "Bank 8", value: 59200, growth: "+2,1%" },
+  { name: "Bank 9", value: 55870, growth: "+1,7%" },
+  { name: "Bank 10", value: 52110, growth: "+1,2%" },
+] as const;
 
 function addMonths(yearMonth: string, diff: number): string {
   const [year, month] = yearMonth.split("-").map(Number);
@@ -30,91 +34,42 @@ function toSignedPercent(value: number | null): string {
   }
 
   const sign = value >= 0 ? "+" : "";
-  return `${sign}${formatPercent(value)}`;
+  const normalized = Number(value.toFixed(1)).toLocaleString("es-CL", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${sign}${normalized}%`;
 }
 
 export async function buildHomepageMetrics() {
   const supabase = getSupabaseAdminClient();
-  const today = getChileTodayIso();
 
-  const [{ data: ufRows, error: ufError }, { data: latestRows, error: latestError }] = await Promise.all([
-    supabase
-      .from("uf_values")
-      .select("value, uf_date")
-      .lte("uf_date", today)
-      .order("uf_date", { ascending: false })
-      .limit(1),
-    supabase
-      .from("bank_credit_card_ops_metrics")
-      .select("period_month")
-      .eq("operation_type", "Compras")
-      .order("period_month", { ascending: false })
-      .limit(1),
-  ]);
+  const { data: latestRows, error: latestError } = await supabase
+    .from("bank_credit_card_ops_metrics")
+    .select("period_month")
+    .eq("operation_type", "Compras")
+    .order("period_month", { ascending: false })
+    .limit(1);
 
-  if (ufError) throw new Error(ufError.message);
   if (latestError) throw new Error(latestError.message);
-  if (!ufRows?.length || !latestRows?.length) {
+  if (!latestRows?.length) {
     throw new Error("Homepage metrics source data unavailable.");
   }
 
-  const ufRow = ufRows[0] as { value: string | number; uf_date: string };
   const latestRow = latestRows[0] as { period_month: string };
-  const ufToday = Number(ufRow.value);
   const latestMonth = latestRow.period_month.slice(0, 7);
   const previousYearMonth = addMonths(latestMonth, -12);
 
   const { data: rows, error: rowsError } = await supabase
     .from("bank_credit_card_ops_metrics")
-    .select(
-      "operation_type,institution_code,institution_name,period_month,real_value_uf,transaction_count,source_dataset_code"
-    )
+    .select("operation_type,period_month,nominal_volume_millions_clp")
     .in("operation_type", ["Compras", "Avance en Efectivo", "Cargos por Servicio"])
     .gte("period_month", `${previousYearMonth}-01`)
-    .lte("period_month", `${latestMonth}-01`)
-    .order("period_month", { ascending: true })
-    .order("institution_name", { ascending: true });
+    .lte("period_month", `${latestMonth}-01`);
 
   if (rowsError) throw new Error(rowsError.message);
 
   const metricRows = (rows ?? []) as CreditMetricRow[];
-  const purchases = metricRows.filter((row) => row.operation_type === "Compras");
-
-  const byMonthAndBank = new Map<string, { name: string; realUf: number; tx: number }>();
-  for (const row of purchases) {
-    const nonBanking = isLikelyNonBankingInstitution(
-      row.institution_name,
-      row.institution_code,
-      row.source_dataset_code ?? undefined
-    );
-    if (nonBanking && !isTenpoInstitution(row.institution_name)) continue;
-
-    const canonical = getCanonicalInstitution(row.institution_name, row.institution_code);
-    const month = row.period_month.slice(0, 7);
-    const key = `${month}__${canonical.institutionCode}`;
-    const current = byMonthAndBank.get(key) ?? { name: canonical.institutionName, realUf: 0, tx: 0 };
-    current.realUf += Number(row.real_value_uf ?? 0);
-    current.tx += Number(row.transaction_count ?? 0);
-    byMonthAndBank.set(key, current);
-  }
-
-  const heroBars = Array.from(byMonthAndBank.entries())
-    .filter(([key]) => key.startsWith(`${latestMonth}__`))
-    .map(([key, latest]) => {
-      const bankCode = key.split("__")[1];
-      const previous = byMonthAndBank.get(`${previousYearMonth}__${bankCode}`);
-      const latestAvg = latest.tx > 0 ? (latest.realUf * ufToday * 1_000_000) / latest.tx : 0;
-      const previousAvg =
-        previous && previous.tx > 0 ? (previous.realUf * ufToday * 1_000_000) / previous.tx : null;
-      const growth = previousAvg && previousAvg > 0 ? ((latestAvg - previousAvg) / previousAvg) * 100 : null;
-      return {
-        name: latest.name,
-        value: Math.round(latestAvg),
-        growth: toSignedPercent(growth),
-      };
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 8);
 
   function totalByMonth(
     operation: "Compras" | "Avance en Efectivo" | "Cargos por Servicio",
@@ -122,7 +77,7 @@ export async function buildHomepageMetrics() {
   ) {
     return metricRows.reduce((sum, row) => {
       if (row.operation_type !== operation || row.period_month.slice(0, 7) !== month) return sum;
-      return sum + Number(row.real_value_uf ?? 0) * ufToday;
+      return sum + Number(row.nominal_volume_millions_clp ?? 0);
     }, 0);
   }
 
@@ -137,8 +92,8 @@ export async function buildHomepageMetrics() {
     previous > 0 ? ((latest - previous) / previous) * 100 : null;
 
   return {
-    heroMonthLabel: formatMonthLabel(latestMonth),
-    heroBars,
+    heroMonthLabel: `${formatMonthLabel(latestMonth)} (Mock)`,
+    heroBars: HERO_MOCK_BANKS.map((row) => ({ ...row })),
     livePulseMonthLabel: `Latest month: ${formatMonthLabel(latestMonth)}`,
     livePulseCases: [
       {

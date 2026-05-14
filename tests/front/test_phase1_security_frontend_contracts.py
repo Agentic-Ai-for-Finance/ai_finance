@@ -91,8 +91,8 @@ def test_phase1_api_surface_exists_for_public_protected_and_preferences():
     assert '.from("app_audit_logs")' in admin_audit
     assert "authEnv" in Path("front/app/api/v1/auth/session/route.ts").read_text()
     metric_api = Path("front/lib/server/metric-api.ts").read_text()
-    assert "transaction_count,real_value_uf" in metric_api
-    assert "account_count,real_balance_uf" in metric_api
+    assert "transaction_count,nominal_volume_millions_clp" in metric_api
+    assert "account_count,nominal_balance_millions_clp" in metric_api
 
 
 def test_phase1_api_routes_log_security_events():
