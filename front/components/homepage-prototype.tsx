@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { fetchHomepageMetrics } from "@/lib/homepage-queries";
 import { checkingAccountOperations } from "@/lib/checking-account-config";
 import { creditCardOperations } from "@/lib/credit-card-config";
 import {
@@ -66,12 +67,12 @@ type LivePulseCase = {
   growth: string;
 };
 
-const LIVE_PULSE_CASES: LivePulseCase[] = [
-  { product: "Credit Cards / Purchases", volume: "$3.839.569 MM CLP", growth: "+7,4%" },
-  { product: "Debit Cards / Debit Transactions", volume: "591.228.900 Transactions", growth: "+6,9%" },
-  { product: "Prepaid Cards / Purchases", volume: "$143.219 MM CLP", growth: "+21,5%" },
-  { product: "Checking Accounts / Natural Without Interest", volume: "34.973.055 Accounts", growth: "+6,2%" },
-];
+type HeroBar = {
+  name: string;
+  color: string;
+  value: number;
+  growth: string;
+};
 
 type HomepagePrototypeProps = {
   navStyle?: "dark" | "white-shell";
@@ -305,26 +306,16 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
   );
 }
 
-function MiniChart() {
-  const issuerData = [
-    { name: "Banco de Chile", color: "var(--home-mint)", value: 58400, growth: "+4,2%" },
-    { name: "Banco Santander", color: "var(--home-amber)", value: 54900, growth: "+3,6%" },
-    { name: "BCI", color: "var(--home-pink)", value: 52100, growth: "+2,8%" },
-    { name: "Banco Estado", color: "var(--home-mint)", value: 46700, growth: "+2,1%" },
-    { name: "Banco Falabella", color: "var(--home-amber)", value: 39300, growth: "+5,0%" },
-    { name: "Scotiabank", color: "var(--home-pink)", value: 35800, growth: "+3,3%" },
-    { name: "Banco BICE", color: "var(--home-mint)", value: 33400, growth: "+1,9%" },
-    { name: "Banco Itaú", color: "var(--home-amber)", value: 31600, growth: "+2,4%" },
-    { name: "Banco Ripley", color: "var(--home-pink)", value: 28200, growth: "+4,6%" },
-    { name: "CMR Falabella", color: "var(--home-mint)", value: 24700, growth: "+6,1%" },
-  ] as const;
-  const bars = [...issuerData].sort((a, b) => b.value - a.value).slice(0, 8);
+function MiniChart({ bars }: { bars: HeroBar[] }) {
+  const safeBars = bars.length
+    ? bars
+    : [{ name: "Loading", color: "var(--home-mint)", value: 1, growth: "N/A" }];
   const width = 720;
   const height = 520;
   const padding = { left: 20, right: 220, top: 18, bottom: 18 };
-  const maxValue = Math.max(...bars.map((bar) => bar.value));
+  const maxValue = Math.max(...safeBars.map((bar) => bar.value));
   const trackWidth = width - padding.left - padding.right;
-  const rowHeight = (height - padding.top - padding.bottom) / bars.length;
+  const rowHeight = (height - padding.top - padding.bottom) / safeBars.length;
   const barHeight = Math.min(24, rowHeight * 0.58);
 
   return (
@@ -344,7 +335,7 @@ function MiniChart() {
           </g>
         );
       })}
-      {bars.map((bar, index) => {
+      {safeBars.map((bar, index) => {
         const y = padding.top + index * rowHeight + (rowHeight - barHeight) / 2;
         const barWidth = (bar.value / maxValue) * trackWidth;
         return (
@@ -403,7 +394,13 @@ function MiniChart() {
   );
 }
 
-function HeroSection() {
+function HeroSection({
+  bars,
+  monthLabel,
+}: {
+  bars: HeroBar[];
+  monthLabel: string;
+}) {
   return (
     <section className="relative flex min-h-[calc(100vh-4rem)] items-center border-b border-[var(--home-rule)]">
       <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-12 sm:px-6 md:py-14">
@@ -440,7 +437,7 @@ function HeroSection() {
             <div className="flex items-center justify-between border-b border-[var(--home-rule)] px-5 py-3">
               <div>
                 <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-                  February 2026
+                  {monthLabel}
                 </div>
                 <div className="mt-1 font-[family:var(--font-home-display)] text-lg text-[var(--home-foreground)]">
                   Average Purchase with Credit Card and Growth YoY
@@ -448,7 +445,7 @@ function HeroSection() {
               </div>
             </div>
             <div className="w-full flex-1">
-              <MiniChart />
+              <MiniChart bars={bars} />
             </div>
           </div>
         </div>
@@ -584,24 +581,26 @@ function WorkflowSection() {
   );
 }
 
-function LivePulseSection() {
+function LivePulseSection({ cases, monthLabel }: { cases: LivePulseCase[]; monthLabel: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const safeCases = cases.length
+    ? cases
+    : [{ product: "Loading", volume: "Loading", growth: "N/A" }];
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setIsVisible(false);
       window.setTimeout(() => {
-        setActiveIndex((current) => (current + 1) % LIVE_PULSE_CASES.length);
+        setActiveIndex((current) => (current + 1) % safeCases.length);
         setIsVisible(true);
       }, 220);
     }, 2800);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [safeCases.length]);
 
-  const activeCase = LIVE_PULSE_CASES[activeIndex];
-  const monthLabel = "Latest month: 02/26";
+  const activeCase = safeCases[activeIndex % safeCases.length];
 
   return (
     <section className="border-b border-[var(--home-rule)] bg-[var(--home-surface)] py-16 sm:py-20">
@@ -760,14 +759,48 @@ export function HomepagePrototype({
   navStyle = "dark",
   homeHref = "/",
 }: HomepagePrototypeProps) {
+  const [heroBars, setHeroBars] = useState<HeroBar[]>([]);
+  const [heroMonthLabel, setHeroMonthLabel] = useState("Latest month");
+  const [livePulseCases, setLivePulseCases] = useState<LivePulseCase[]>([]);
+  const [livePulseMonthLabel, setLivePulseMonthLabel] = useState("Latest month");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHomepageData() {
+      try {
+        const payload = await fetchHomepageMetrics();
+
+        if (!cancelled) {
+          const barPalette = ["var(--home-mint)", "var(--home-amber)", "var(--home-pink)"] as const;
+          setHeroBars(payload.heroBars.map((bar, index) => ({ ...bar, color: barPalette[index % barPalette.length] })));
+          setHeroMonthLabel(payload.heroMonthLabel);
+          setLivePulseCases(payload.livePulseCases);
+          setLivePulseMonthLabel(payload.livePulseMonthLabel);
+        }
+      } catch {
+        if (!cancelled) {
+          setHeroBars([]);
+          setLivePulseCases([]);
+        }
+      }
+    }
+
+    void loadHomepageData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[var(--home-background)] text-[var(--home-foreground)]">
       <HomeNav navStyle={navStyle} homeHref={homeHref} />
       <main>
-        <HeroSection />
+        <HeroSection bars={heroBars} monthLabel={heroMonthLabel} />
         <ProductsSection />
         <WorkflowSection />
-        <LivePulseSection />
+        <LivePulseSection cases={livePulseCases} monthLabel={livePulseMonthLabel} />
         <CallToActionSection />
       </main>
       <FooterSection />
