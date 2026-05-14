@@ -24,7 +24,6 @@ const NAV = [
 const PRODUCTS = [
   {
     id: "credit",
-    number: "01",
     title: "Credit Cards",
     metrics: ["Purchases", "Cash Advances", "Fees", "Activation Metrics"],
     accent: "var(--home-mint)",
@@ -32,7 +31,6 @@ const PRODUCTS = [
   },
   {
     id: "debit",
-    number: "02",
     title: "Debit Cards",
     metrics: ["Volume", "Transactions", "Avg. Ticket", "Activation"],
     accent: "var(--home-amber)",
@@ -40,7 +38,6 @@ const PRODUCTS = [
   },
   {
     id: "prepaid",
-    number: "03",
     title: "Prepaid Cards",
     metrics: ["Natural Person", "Business", "ATM", "Activation"],
     accent: "var(--home-pink)",
@@ -48,7 +45,6 @@ const PRODUCTS = [
   },
   {
     id: "checking",
-    number: "04",
     title: "Checking Accounts",
     metrics: ["Balances", "Accounts", "Average Balance", "UF"],
     accent: "var(--home-mint)",
@@ -56,7 +52,6 @@ const PRODUCTS = [
   },
   {
     id: "loans",
-    number: "05",
     title: "Loans",
     metrics: ["Consumer", "Mortgage", "Commercial", "Soon"],
     accent: "var(--home-amber)",
@@ -182,7 +177,7 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
               <Link
                 key={item.label}
                 href={item.href}
-                className="border-b-2 border-transparent pb-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500 transition hover:text-slate-950"
+                className="border-b-2 border-transparent pb-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-700 transition hover:text-slate-950"
               >
                 {item.label}
               </Link>
@@ -203,12 +198,13 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
                 <div key={item.label} className="group relative">
                   <Link
                     href={item.href}
-                    className="border-b-2 border-transparent pb-0.5 text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500 transition hover:text-slate-950"
+                    className="border-b-2 border-transparent pb-0.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-700 transition hover:text-slate-950 focus-visible:text-slate-950"
                   >
                     {item.label}
                   </Link>
                   {dropdownItems.length > 0 ? (
-                    <div className="pointer-events-none absolute left-1/2 top-full z-40 hidden w-72 -translate-x-1/2 pt-3 group-hover:block">
+                    <div className="pointer-events-none absolute left-1/2 top-full z-40 hidden w-72 -translate-x-1/2 pt-1 group-hover:block group-focus-within:block">
+                      <div className="h-2 w-full" />
                       <div className="pointer-events-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
                         {dropdownItems.map((dropdownItem) => (
                           <Link
@@ -293,7 +289,7 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
             <Link
               key={item.label}
               href={item.href}
-              className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--home-muted)] transition-colors hover:text-[var(--home-foreground)]"
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--home-foreground)]/90 transition-colors hover:text-[var(--home-mint)]"
             >
               {item.label}
             </Link>
@@ -403,9 +399,9 @@ function MiniChart() {
 
 function HeroSection() {
   return (
-    <section className="relative border-b border-[var(--home-rule)]">
+    <section className="relative flex min-h-[calc(100vh-4rem)] items-center border-b border-[var(--home-rule)]">
       <div className="home-grid-glow pointer-events-none absolute inset-0" />
-      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-14 sm:px-6 md:py-20">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-0 px-4 py-12 sm:px-6 md:py-14">
         <div className="col-span-12 lg:col-span-7 lg:pr-10">
           <h1 className="font-[family:var(--font-home-display)] text-[clamp(2.6rem,6.5vw,5.4rem)] leading-[0.95] tracking-tight text-[var(--home-foreground)]">
             The banking benchmark,
@@ -463,16 +459,12 @@ function ProductsSection() {
         <div className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
             <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
-              03 — Coverage
+              02 — Coverage
             </div>
             <h2 className="mt-4 font-[family:var(--font-home-display)] text-4xl leading-tight text-[var(--home-foreground)] md:text-5xl">
               Five products.
               <span className="italic text-[var(--home-muted)]"> One view.</span>
             </h2>
-          </div>
-          <div className="max-w-sm text-sm text-[var(--home-muted)]">
-            Each product keeps its own metric set, but the frontend language, navigation, and
-            interaction model stay aligned with the existing `front/` methodology.
           </div>
         </div>
 
@@ -484,18 +476,15 @@ function ProductsSection() {
               className="group relative flex h-full flex-col justify-between rounded-2xl border border-[var(--home-rule)] bg-[color:rgb(12_24_41_/_0.78)] p-6 transition-all hover:-translate-y-1 hover:border-[var(--home-mint)] hover:bg-[var(--home-surface)]"
             >
               <div>
-                <div className="flex items-start justify-between">
-                  <span className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-                    {product.number}
-                  </span>
+                <div className="flex items-start justify-between gap-4">
+                  <h3 className="font-[family:var(--font-home-display)] text-2xl leading-tight text-[var(--home-foreground)]">
+                    {product.title}
+                  </h3>
                   <span
-                    className="h-3 w-3 transition-transform group-hover:scale-125"
+                    className="mt-1 h-3 w-3 shrink-0 transition-transform group-hover:scale-125"
                     style={{ background: product.accent }}
                   />
                 </div>
-                <h3 className="mt-10 font-[family:var(--font-home-display)] text-2xl leading-tight text-[var(--home-foreground)]">
-                  {product.title}
-                </h3>
               </div>
               <ul className="mt-10 space-y-1.5 font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-wider text-[var(--home-muted)]">
                 {product.metrics.map((metric) => (
@@ -538,7 +527,7 @@ function WorkflowSection() {
         <div className="grid grid-cols-12 gap-8">
           <div className="col-span-12 lg:col-span-4">
             <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
-              04 — Method
+              03 — Method
             </div>
             <h2 className="mt-4 font-[family:var(--font-home-display)] text-4xl leading-tight text-[var(--home-foreground)] md:text-5xl">
               From hours
@@ -556,7 +545,7 @@ function WorkflowSection() {
               </div>
               <ol className="mt-6 space-y-4">
                 {before.map((step, index) => (
-                  <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
+                  <li key={step} className="flex items-center gap-3 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
                     <span className="font-[family:var(--font-home-mono)] text-[11px] text-[var(--home-muted)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
@@ -574,7 +563,7 @@ function WorkflowSection() {
               </div>
               <ol className="mt-6 space-y-4">
                 {after.map((step, index) => (
-                  <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
+                  <li key={step} className="flex items-center gap-3 border-b border-[var(--home-rule)] pb-3 last:border-b-0">
                     <span className="font-[family:var(--font-home-mono)] text-[11px] text-[var(--home-mint)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
@@ -582,12 +571,6 @@ function WorkflowSection() {
                   </li>
                 ))}
               </ol>
-              <div className="mt-10 flex items-baseline gap-3">
-                <div className="font-[family:var(--font-home-display)] text-6xl text-[var(--home-mint)]">5s</div>
-                <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-wider text-[var(--home-muted)]">
-                  to get the answer
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -616,61 +599,43 @@ function LivePulseSection() {
   const monthLabel = "Latest month: 02/26";
 
   return (
-    <section className="border-b border-[var(--home-rule)] py-14 sm:py-16">
+    <section className="border-b border-[var(--home-rule)] bg-[var(--home-surface)] py-16 sm:py-20">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <div className="border border-[var(--home-rule)] bg-[var(--home-surface)] p-6 sm:p-8">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
-                05 — Live pulse
-              </div>
-              <h2 className="mt-3 font-[family:var(--font-home-display)] text-3xl text-[var(--home-foreground)] sm:text-4xl">
-                Product momentum at a glance
-              </h2>
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.2em] text-[var(--home-mint)]">
+              04 — Live pulse
             </div>
-            <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-              {monthLabel}
-            </div>
+            <h2 className="mt-3 font-[family:var(--font-home-display)] text-4xl text-[var(--home-foreground)] sm:text-5xl">
+              Product momentum at a glance
+            </h2>
           </div>
-
-          <div className="grid grid-cols-1 gap-px bg-[var(--home-rule)] md:grid-cols-3">
-            <div
-              className={`bg-[var(--home-background)] px-6 py-5 transition-all duration-300 ${
-                isVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-              }`}
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
-                Product
-              </div>
-              <div className="mt-3 text-xl font-semibold text-[var(--home-foreground)]">
-                {activeCase.product}
-              </div>
-            </div>
-            <div
-              className={`bg-[var(--home-background)] px-6 py-5 transition-all duration-300 ${
-                isVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-              }`}
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
-                Volume
-              </div>
-              <div className="mt-3 text-xl font-semibold text-[var(--home-foreground)]">
-                {activeCase.volume}
-              </div>
-            </div>
-            <div
-              className={`bg-[var(--home-background)] px-6 py-5 transition-all duration-300 ${
-                isVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-              }`}
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
-                Growth YoY
-              </div>
-              <div className="mt-3 text-xl font-semibold text-[var(--home-mint)]">
-                {activeCase.growth}
-              </div>
-            </div>
+          <div className="font-[family:var(--font-home-mono)] text-[11px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
+            {monthLabel}
           </div>
+        </div>
+        <div className="grid grid-cols-1 gap-px bg-[var(--home-rule)] md:grid-cols-3">
+          {[
+            { label: "Product", value: activeCase.product, tone: "text-[var(--home-foreground)]" },
+            { label: "Volume", value: activeCase.volume, tone: "text-[var(--home-foreground)]" },
+            { label: "Growth YoY", value: activeCase.growth, tone: "text-[var(--home-mint)]" },
+          ].map((item, index) => (
+            <div
+              key={item.label}
+              className={`relative overflow-hidden bg-[var(--home-background)] px-6 py-7 transition-all duration-500 ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+              }`}
+              style={{ transitionDelay: `${index * 60}ms` }}
+            >
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--home-mint),transparent)] opacity-70" />
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--home-muted)]">
+                {item.label}
+              </div>
+              <div className={`mt-4 text-2xl font-semibold sm:text-3xl ${item.tone}`}>
+                {item.value}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -779,7 +744,7 @@ function FooterSection() {
       <div className="mt-8 border-t border-[var(--home-rule)]">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-5 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>© 2026 Taclaro</div>
-          <div>Prototype aligned to Next.js front shell</div>
+          <div />
         </div>
       </div>
     </footer>
