@@ -22,10 +22,11 @@ export async function GET(request: NextRequest) {
     const payload = await buildHomepageMetrics();
     return jsonOk(payload);
   } catch (error) {
+    console.error("public homepage metrics error", error);
     return jsonError(
       500,
       "HOMEPAGE_METRICS_FAILED",
-      error instanceof Error ? error.message : "Unable to load homepage metrics."
+      "Unable to load homepage metrics."
     );
   }
 }

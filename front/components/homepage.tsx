@@ -314,6 +314,7 @@ function MiniChart({ bars }: { bars: HeroBar[] }) {
   const height = 520;
   const padding = { left: 20, right: 220, top: 18, bottom: 18 };
   const maxValue = Math.max(...safeBars.map((bar) => bar.value));
+  const safeMaxValue = Math.max(maxValue, 1);
   const trackWidth = width - padding.left - padding.right;
   const rowHeight = (height - padding.top - padding.bottom) / safeBars.length;
   const barHeight = Math.min(24, rowHeight * 0.58);
@@ -322,7 +323,7 @@ function MiniChart({ bars }: { bars: HeroBar[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full">
       {safeBars.map((bar, index) => {
         const y = padding.top + index * rowHeight + (rowHeight - barHeight) / 2;
-        const barWidth = (bar.value / maxValue) * trackWidth;
+        const barWidth = (bar.value / safeMaxValue) * trackWidth;
         return (
           <g key={bar.name}>
             <rect x={padding.left} y={y} width={trackWidth} height={barHeight} fill="var(--home-surface)" rx={3} />
