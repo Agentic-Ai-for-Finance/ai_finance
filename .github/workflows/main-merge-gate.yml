@@ -42,6 +42,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Enforce PR source branch policy for main
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_REF="${GITHUB_HEAD_REF}"
+          if [[ "${HEAD_REF}" == release-* || "${HEAD_REF}" == hotfix-* ]]; then
+            echo "Allowed source branch for main PR: ${HEAD_REF}"
+            exit 0
+          fi
+
+          echo "Only release-* or hotfix-* branches can open PRs to main."
+          echo "Current source branch: ${HEAD_REF}"
+          exit 1
+
       - name: Fail if changed files are ignored by .gitignore
         shell: bash
         run: |
