@@ -19,6 +19,7 @@ export function useSavedBankPreferences(section: string) {
     async function load() {
       if (!isSignedIn) {
         setDefaultInstitutionCodes([]);
+        setIsLoading(false);
         return;
       }
 
