@@ -62,7 +62,14 @@ jobs:
             DIFF_HEAD="HEAD"
           else
             DIFF_BASE="${{ github.event.before }}"
-            DIFF_HEAD="${{ github.sha }}"
+            DIFF_HEAD="HEAD"
+            if [[ "${DIFF_BASE}" =~ ^0+$ ]] || ! git cat-file -e "${DIFF_BASE}^{commit}" 2>/dev/null; then
+              if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+                DIFF_BASE="HEAD^"
+              else
+                DIFF_BASE="$(git hash-object -t tree /dev/null)"
+              fi
+            fi
           fi
 
           CHANGED_FILES=$(git diff --name-only "${DIFF_BASE}" "${DIFF_HEAD}")
@@ -169,7 +176,14 @@ jobs:
             DIFF_HEAD="HEAD"
           else
             DIFF_BASE="${{ github.event.before }}"
-            DIFF_HEAD="${{ github.sha }}"
+            DIFF_HEAD="HEAD"
+            if [[ "${DIFF_BASE}" =~ ^0+$ ]] || ! git cat-file -e "${DIFF_BASE}^{commit}" 2>/dev/null; then
+              if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+                DIFF_BASE="HEAD^"
+              else
+                DIFF_BASE="$(git hash-object -t tree /dev/null)"
+              fi
+            fi
           fi
 
           CHANGED_FILES=$(git diff --name-only "${DIFF_BASE}" "${DIFF_HEAD}")
