@@ -722,3 +722,23 @@ Frontend data access:
   - block staged files matching `.gitignore`
 - Implementation note:
   - frontend optional-auth helper uses an inline ESLint suppression for Clerk-disabled conditional fallback (`front/lib/clerk-compat.tsx`).
+
+# Session Handoff (Homepage Refresh)
+
+- Date: 2026-05-13.
+- Homepage routing:
+  - `/` is now the active homepage experience.
+  - legacy prototype route scaffolding under `/prototype/*` was removed from active navigation flow.
+- Navigation consistency:
+  - dashboard shell top navbar (`front/components/app-shell.tsx`) now mirrors homepage navbar behavior (logo-to-home, stronger contrast, stable dropdown interaction/alignment).
+- Homepage data path:
+  - homepage no longer uses hardcoded mock values for hero/live pulse.
+  - homepage reads from dedicated API route: `/api/v1/public/homepage`.
+  - aggregation logic is centralized in `front/lib/server/homepage-metrics.ts`.
+- Homepage credit scope and issuer policy:
+  - homepage hero/live pulse currently use credit-card metrics only.
+  - issuer ranking applies shared canonical mapping (`getCanonicalInstitution`) for display/merge consistency.
+  - include banking issuers and Tenpo; exclude other non-banking issuer rows.
+- UF behavior on homepage:
+  - homepage uses latest UF up to today's Santiago date from `public.uf_values`.
+  - no UF override control is exposed on homepage.
