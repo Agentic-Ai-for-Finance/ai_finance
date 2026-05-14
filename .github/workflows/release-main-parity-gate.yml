@@ -1,9 +1,9 @@
-name: Development Feature Fast Feedback
+name: Release Main Parity Gate
 
 on:
   push:
     branches:
-      - development-*
+      - release-*
     paths-ignore:
       - AGENTS.md
       - README.md
@@ -13,15 +13,15 @@ on:
       - .DS_Store
 
 concurrency:
-  group: development-feature-fast-feedback-${{ github.ref_name }}
+  group: release-main-parity-gate-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
-  feature_push_fast_feedback:
-    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'development-') }}
+  release_push_main_parity:
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release-') }}
     runs-on: ubuntu-latest
-    environment: development
-    timeout-minutes: 45
+    environment: production
+    timeout-minutes: 60
 
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -98,14 +98,8 @@ jobs:
       - name: Ruff check
         run: uv run ruff check .
 
-      - name: Run Python fast contract/security suite
-        run: >
-          uv run pytest -q
-          tests/front/test_phase1_security_frontend_contracts.py
-          tests/front/test_debit_frontend_contracts.py
-          tests/front/test_prepaid_frontend_contracts.py
-          tests/front/test_checking_accounts_frontend_contracts.py
-          tests/db/test_phase1_security_sql.py
+      - name: Run full Python test suite (release parity gate)
+        run: uv run pytest -q
 
       - name: Setup Node 20
         uses: actions/setup-node@v4
