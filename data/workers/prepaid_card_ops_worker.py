@@ -6,9 +6,9 @@ from datetime import date
 from decimal import Decimal
 
 import httpx
-from dotenv import load_dotenv
 from supabase import create_client
 
+from data.env_loader import load_branch_env
 from data.loaders.bank_credit_card_ops_sync_state_loader import (
     get_latest_state_source_month,
     record_sync_attempt,
@@ -24,6 +24,7 @@ from data.loaders.prepaid_card_ops_loader import (
     upsert_prepaid_card_ops_curated,
     upsert_prepaid_card_ops_raw,
 )
+from data.workers.runtime import run_with_retries, worker_run_mode
 from data.models.prepaid_card_operations import (
     CMF_DATASETS_TABLE,
     CMF_MEASURE_KIND_ACTIVE_CARDS_TOTAL,
@@ -71,7 +72,7 @@ class PrepaidCardOpsWorkerConfig:
 
 
 def load_config() -> PrepaidCardOpsWorkerConfig:
-    load_dotenv()
+    load_branch_env()
     return PrepaidCardOpsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
@@ -114,6 +115,22 @@ def operation_dataset_code(customer_type: str, operation_type: str) -> str:
         raise ValueError(
             f"Unsupported prepaid operation config: {customer_type} / {operation_type}"
         ) from exc
+
+
+def _prepaid_operation_failure_codes(config: PrepaidCardOperationConfig) -> list[str]:
+    return [
+        config.dataset_code,
+        config.transaction_count_dataset_code,
+        config.nominal_volume_dataset_code,
+    ]
+
+
+def _prepaid_card_counts_failure_codes(config: PrepaidCardCountsConfig) -> list[str]:
+    return [
+        config.dataset_code,
+        config.active_cards_total_dataset_code,
+        config.cards_with_operations_dataset_code,
+    ]
 
 
 def load_active_operation_configs(sb) -> list[PrepaidCardOperationConfig]:
@@ -426,14 +443,25 @@ async def sync_all_prepaid_card_ops_once(
     run_date: date,
     operations: list[PrepaidCardOperationConfig] | None = None,
     card_counts: list[PrepaidCardCountsConfig] | None = None,
+    failure_datasets: list[str] | None = None,
+    enable_retries: bool = False,
 ) -> dict[str, int]:
     results: dict[str, int] = {}
 
     for counts_config in card_counts or load_active_card_counts_configs(sb):
         try:
-            results[counts_config.dataset_code] = await sync_card_counts_once(
-                client, sb, config=counts_config, run_date=run_date
-            )
+            if enable_retries:
+                results[counts_config.dataset_code] = await run_with_retries(
+                    f"Prepaid card counts {counts_config.dataset_code}",
+                    lambda: sync_card_counts_once(
+                        client, sb, config=counts_config, run_date=run_date
+                    ),
+                    log.warning,
+                )
+            else:
+                results[counts_config.dataset_code] = await sync_card_counts_once(
+                    client, sb, config=counts_config, run_date=run_date
+                )
         except Exception as exc:
             log.warning(
                 "Prepaid card counts %s failed: %s: %s",
@@ -442,12 +470,25 @@ async def sync_all_prepaid_card_ops_once(
                 exc,
             )
             results[counts_config.dataset_code] = 0
+            if failure_datasets is not None:
+                failure_datasets.extend(
+                    _prepaid_card_counts_failure_codes(counts_config)
+                )
 
     for operation in operations or load_active_operation_configs(sb):
         try:
-            results[operation.dataset_code] = await sync_operation_once(
-                client, sb, config=operation, run_date=run_date
-            )
+            if enable_retries:
+                results[operation.dataset_code] = await run_with_retries(
+                    f"Prepaid card operation {operation.dataset_code}",
+                    lambda: sync_operation_once(
+                        client, sb, config=operation, run_date=run_date
+                    ),
+                    log.warning,
+                )
+            else:
+                results[operation.dataset_code] = await sync_operation_once(
+                    client, sb, config=operation, run_date=run_date
+                )
         except Exception as exc:
             log.warning(
                 "Prepaid card operation %s failed: %s: %s",
@@ -456,11 +497,13 @@ async def sync_all_prepaid_card_ops_once(
                 exc,
             )
             results[operation.dataset_code] = 0
+            if failure_datasets is not None:
+                failure_datasets.extend(_prepaid_operation_failure_codes(operation))
 
     return results
 
 
-async def run_worker(config: PrepaidCardOpsWorkerConfig | None = None) -> None:
+async def run_worker(config: PrepaidCardOpsWorkerConfig | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
@@ -471,13 +514,29 @@ async def run_worker(config: PrepaidCardOpsWorkerConfig | None = None) -> None:
 
     async with httpx.AsyncClient() as client:
         while True:
+            failures: list[str] = []
             try:
                 await sync_all_prepaid_card_ops_once(
-                    client, sb, config=worker_config, run_date=date.today()
+                    client,
+                    sb,
+                    config=worker_config,
+                    run_date=date.today(),
+                    failure_datasets=failures,
+                    enable_retries=True,
                 )
             except Exception as exc:
                 log.warning(
                     "Prepaid card ops sync failed: %s: %s", type(exc).__name__, exc
                 )
+                return 1
 
+            if failures:
+                log.warning(
+                    "Prepaid card sync completed with exhausted dataset failures: %s",
+                    ", ".join(sorted(set(failures))),
+                )
+                return 1
+
+            if worker_run_mode() == "oneshot":
+                return 0
             await asyncio.sleep(worker_config.sync_interval_s)

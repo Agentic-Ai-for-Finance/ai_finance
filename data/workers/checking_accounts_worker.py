@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from datetime import date
 
 import httpx
-from dotenv import load_dotenv
 from supabase import create_client
 
+from data.env_loader import load_branch_env
 from data.loaders.bank_credit_card_ops_sync_state_loader import (
     get_latest_state_source_month,
     record_sync_attempt,
@@ -20,6 +20,7 @@ from data.loaders.checking_accounts_loader import (
     upsert_checking_accounts_curated,
     upsert_checking_accounts_raw,
 )
+from data.workers.runtime import run_with_retries, worker_run_mode
 from data.models.checking_accounts import (
     CHECKING_ACCOUNTS_DATASET_BUSINESS_WITH_INTEREST,
     CHECKING_ACCOUNTS_DATASET_BUSINESS_WITHOUT_INTEREST,
@@ -53,7 +54,7 @@ class CheckingAccountsWorkerConfig:
 
 
 def load_config() -> CheckingAccountsWorkerConfig:
-    load_dotenv()
+    load_branch_env()
     return CheckingAccountsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
@@ -73,6 +74,14 @@ def operation_dataset_code(operation_type: str) -> str:
     if operation_type == CHECKING_ACCOUNTS_OPERATION_BUSINESS_WITH_INTEREST:
         return CHECKING_ACCOUNTS_DATASET_BUSINESS_WITH_INTEREST
     raise ValueError(f"Unsupported operation type: {operation_type}")
+
+
+def _checking_operation_failure_codes(config: CheckingAccountsConfig) -> list[str]:
+    return [
+        config.dataset_code,
+        config.account_count_dataset_code,
+        config.nominal_balance_dataset_code,
+    ]
 
 
 def load_active_checking_accounts_configs(sb) -> list[CheckingAccountsConfig]:
@@ -229,16 +238,30 @@ async def sync_all_checking_accounts_once(
     config: CheckingAccountsWorkerConfig,
     run_date: date,
     operations: list[CheckingAccountsConfig] | None = None,
+    failure_datasets: list[str] | None = None,
+    enable_retries: bool = False,
 ) -> dict[str, int]:
     results: dict[str, int] = {}
     for operation in operations or load_active_checking_accounts_configs(sb):
         try:
-            results[operation.dataset_code] = await sync_checking_accounts_once(
-                client,
-                sb,
-                config=operation,
-                run_date=run_date,
-            )
+            if enable_retries:
+                results[operation.dataset_code] = await run_with_retries(
+                    f"Checking accounts operation {operation.dataset_code}",
+                    lambda: sync_checking_accounts_once(
+                        client,
+                        sb,
+                        config=operation,
+                        run_date=run_date,
+                    ),
+                    log.warning,
+                )
+            else:
+                results[operation.dataset_code] = await sync_checking_accounts_once(
+                    client,
+                    sb,
+                    config=operation,
+                    run_date=run_date,
+                )
         except Exception as exc:
             log.warning(
                 "Checking accounts operation %s failed: %s: %s",
@@ -247,10 +270,12 @@ async def sync_all_checking_accounts_once(
                 exc,
             )
             results[operation.dataset_code] = 0
+            if failure_datasets is not None:
+                failure_datasets.extend(_checking_operation_failure_codes(operation))
     return results
 
 
-async def run_worker(config: CheckingAccountsWorkerConfig | None = None) -> None:
+async def run_worker(config: CheckingAccountsWorkerConfig | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
@@ -261,16 +286,29 @@ async def run_worker(config: CheckingAccountsWorkerConfig | None = None) -> None
 
     async with httpx.AsyncClient() as client:
         while True:
+            failures: list[str] = []
             try:
                 await sync_all_checking_accounts_once(
                     client,
                     sb,
                     config=worker_config,
                     run_date=date.today(),
+                    failure_datasets=failures,
+                    enable_retries=True,
                 )
             except Exception as exc:
                 log.warning(
                     "Checking accounts sync failed: %s: %s", type(exc).__name__, exc
                 )
+                return 1
 
+            if failures:
+                log.warning(
+                    "Checking accounts sync completed with exhausted dataset failures: %s",
+                    ", ".join(sorted(set(failures))),
+                )
+                return 1
+
+            if worker_run_mode() == "oneshot":
+                return 0
             await asyncio.sleep(worker_config.sync_interval_s)

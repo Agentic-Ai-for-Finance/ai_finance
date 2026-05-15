@@ -1,7 +1,8 @@
 import asyncio
+import sys
 
 from data.workers.bank_credit_card_ops_worker import run_worker
 
 
 if __name__ == "__main__":
-    asyncio.run(run_worker())
+    sys.exit(asyncio.run(run_worker()))
