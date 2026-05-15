@@ -11,6 +11,7 @@ import {
   OptionalSignedOut,
   OptionalUserButton,
 } from "@/lib/clerk-compat";
+import { SiteFooter } from "@/components/site-footer";
 import { debitCardOperations } from "@/lib/debit-card-config";
 import { prepaidCardOperations, prepaidCustomerTypes } from "@/lib/prepaid-card-config";
 
@@ -663,48 +664,6 @@ function CallToActionSection() {
   );
 }
 
-function FooterSection() {
-  return (
-    <footer className="pb-6 pt-10">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-12 gap-8 px-4 sm:px-6">
-        <div className="col-span-12 md:col-span-5">
-          <div className="flex items-baseline gap-2">
-            <span className="font-[family:var(--font-home-display)] text-3xl text-[var(--home-foreground)]">
-              Taclaro
-            </span>
-            <span className="h-1.5 w-1.5 bg-[var(--home-mint)]" />
-          </div>
-          <p className="mt-4 max-w-sm text-sm text-[var(--home-muted)]">
-            Instant benchmark for Chilean banking.
-          </p>
-        </div>
-
-        <div className="col-span-6 md:col-span-2">
-          <div className="font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)]">
-            Products
-          </div>
-          <ul className="mt-4 space-y-2 text-sm text-[var(--home-foreground)]">
-            {NAV.map((item) => (
-              <li key={item.label}>
-                <Link href={item.href} className="hover:text-[var(--home-mint)]">
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-      </div>
-      <div className="mt-8 border-t border-[var(--home-rule)]">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-5 font-[family:var(--font-home-mono)] text-[10px] uppercase tracking-[0.18em] text-[var(--home-muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div>© 2026 Taclaro</div>
-          <div />
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 export function HomepagePrototype({
   navStyle = "dark",
   homeHref = "/",
@@ -753,7 +712,7 @@ export function HomepagePrototype({
         <LivePulseSection cases={livePulseCases} monthLabel={livePulseMonthLabel} />
         <CallToActionSection />
       </main>
-      <FooterSection />
+      <SiteFooter />
     </div>
   );
 }
