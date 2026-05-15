@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from datetime import date
 
 import httpx
-from dotenv import load_dotenv
 from supabase import create_client
 
+from data.env_loader import load_branch_env
 from data.loaders.bank_credit_card_ops_sync_state_loader import (
     get_latest_state_source_month,
     record_sync_attempt,
@@ -53,7 +53,7 @@ class CheckingAccountsWorkerConfig:
 
 
 def load_config() -> CheckingAccountsWorkerConfig:
-    load_dotenv()
+    load_branch_env()
     return CheckingAccountsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
