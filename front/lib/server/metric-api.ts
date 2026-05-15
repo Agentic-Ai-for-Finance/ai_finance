@@ -77,7 +77,7 @@ const DATASET_CONFIG: Record<Exclude<DatasetName, "uf-latest">, DatasetConfig> =
     publicSelect:
       "institution_code,institution_name,period_month,total_active_cards,total_cards_with_operations",
     protectedSelect:
-      "institution_code,institution_name,period_month,total_active_cards,active_cards_primary,active_cards_supplementary,total_cards_with_operations,operations_rate,supplementary_rate",
+      "institution_code,institution_name,period_month,total_active_cards,active_cards_primary,active_cards_supplementary,total_cards_with_operations,operations_rate",
     applyFilters: (query) => query,
   },
   "prepaid-card-ops": {

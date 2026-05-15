@@ -23,6 +23,17 @@ def test_debit_queries_use_api_proxy_routes():
     assert '"/api/v1/protected/metrics"' in src
 
 
+def test_debit_activation_server_select_does_not_request_missing_supplementary_rate():
+    src = Path("front/lib/server/metric-api.ts").read_text()
+
+    assert '"debit-card-activation": {' in src
+    assert (
+        "active_cards_primary,active_cards_supplementary,total_cards_with_operations,operations_rate"
+        in src
+    )
+    assert "operations_rate,supplementary_rate" not in src
+
+
 def test_debit_routes_wire_to_operation_slug_model():
     page_src = Path("front/app/debit-cards/page.tsx").read_text()
     dynamic_src = Path("front/app/debit-cards/[operation]/page.tsx").read_text()
