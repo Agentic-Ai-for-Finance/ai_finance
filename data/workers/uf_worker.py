@@ -14,6 +14,7 @@ from data.loaders.uf_loader import (
     record_uf_sync_success,
     upsert_uf_values,
 )
+from data.workers.runtime import run_with_retries, worker_run_mode
 from data.sources.uf_source import fetch_historical_ufs
 
 SYNC_INTERVAL_S = 5 * 24 * 60 * 60
@@ -83,7 +84,7 @@ async def sync_uf_once(client, sb, config: UfWorkerConfig) -> int:
         raise
 
 
-async def run_worker(config: UfWorkerConfig | None = None) -> None:
+async def run_worker(config: UfWorkerConfig | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
@@ -98,8 +99,15 @@ async def run_worker(config: UfWorkerConfig | None = None) -> None:
     async with httpx.AsyncClient() as client:
         while True:
             try:
-                await sync_uf_once(client, sb, worker_config)
+                await run_with_retries(
+                    "UF sync run",
+                    lambda: sync_uf_once(client, sb, worker_config),
+                    log.warning,
+                )
             except Exception as exc:
                 log.warning("UF sync failed: %s: %s", type(exc).__name__, exc)
+                return 1
 
+            if worker_run_mode() == "oneshot":
+                return 0
             await asyncio.sleep(worker_config.sync_interval_s)
