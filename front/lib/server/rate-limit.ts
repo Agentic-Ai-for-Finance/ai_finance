@@ -4,6 +4,8 @@ type WindowEntry = {
 };
 
 const store = new Map<string, WindowEntry>();
+const CLEANUP_INTERVAL_MS = 60 * 1000;
+let lastCleanupAt = 0;
 
 export type RateLimitResult = {
   ok: boolean;
@@ -14,6 +16,15 @@ export type RateLimitResult = {
 
 export function checkRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
+  if (now - lastCleanupAt >= CLEANUP_INTERVAL_MS) {
+    for (const [entryKey, entry] of store.entries()) {
+      if (entry.resetAt <= now) {
+        store.delete(entryKey);
+      }
+    }
+    lastCleanupAt = now;
+  }
+
   const existing = store.get(key);
 
   if (!existing || existing.resetAt <= now) {

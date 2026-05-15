@@ -19,7 +19,7 @@ export async function recordAuditEvent({
   try {
     const supabase = getSupabaseAdminClient();
     const auditLogsTable = supabase.from("app_audit_logs") as any;
-    await auditLogsTable.insert({
+    const { error } = await auditLogsTable.insert({
       user_id: session?.userId ?? null,
       user_role: session?.role ?? null,
       event_type: eventType,
@@ -27,6 +27,15 @@ export async function recordAuditEvent({
       outcome,
       metadata,
     });
+
+    if (error) {
+      console.error("Failed to record audit event", {
+        route,
+        eventType,
+        outcome,
+        error: error.message,
+      });
+    }
   } catch (error) {
     console.error("Failed to record audit event", {
       route,

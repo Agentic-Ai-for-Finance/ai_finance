@@ -308,14 +308,12 @@ export function CreditCardSidebar({
 
   const operationHref = (slug: string) => {
     const params = new URLSearchParams(persistedParams.toString());
-    if (!params.get("view")) {
-      if (section === "credit-cards") {
-        params.set("view", slug === "total-activation-rate" ? defaultOperationsRateViewKey : defaultViewKey);
-      } else if (section === "debit-cards") {
-        params.set("view", slug === "total-activation-rate" ? defaultDebitOperationsRateViewKey : defaultDebitViewKey);
-      } else if (section === "checking-accounts") {
-        params.set("view", defaultCheckingAccountViewKey);
-      }
+    if (section === "credit-cards") {
+      params.set("view", slug === "total-activation-rate" ? defaultOperationsRateViewKey : defaultViewKey);
+    } else if (section === "debit-cards") {
+      params.set("view", slug === "total-activation-rate" ? defaultDebitOperationsRateViewKey : defaultDebitViewKey);
+    } else if (section === "checking-accounts") {
+      params.set("view", defaultCheckingAccountViewKey);
     }
     const basePath =
       section === "debit-cards"

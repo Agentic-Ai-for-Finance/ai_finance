@@ -681,6 +681,7 @@ Frontend data access:
   - `pull_request` -> `development`: `pr_full_gate` (non-draft)
   - `push` -> `development`: `push_smoke`
   - `push` -> `development-*`: `feature_push_fast_feedback`
+  - `push` -> `release-*`: `feature_push_fast_feedback`
   - `pull_request` -> `main`: `main_pr_full_gate` (non-draft)
 - CI checks now standardized across workflows:
   - changed-files guardrail against `.gitignore` matches

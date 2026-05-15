@@ -40,7 +40,7 @@ export function OptionalSignInButton({
   children: ReactNode;
 }) {
   if (!clerkEnabled) {
-    return <>{children}</>;
+    return null;
   }
 
   return <SignInButton mode="modal">{children}</SignInButton>;
