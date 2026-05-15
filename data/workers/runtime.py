@@ -6,21 +6,32 @@ import random
 from collections.abc import Awaitable, Callable
 
 
+def _int_from_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
 def worker_run_mode() -> str:
-    return (os.getenv("WORKER_RUN_MODE", "oneshot") or "oneshot").strip().lower()
+    mode = (os.getenv("WORKER_RUN_MODE", "oneshot") or "oneshot").strip().lower()
+    return mode if mode in {"oneshot", "daemon"} else "oneshot"
 
 
 def max_attempts() -> int:
-    return max(1, int(os.getenv("WORKER_MAX_ATTEMPTS", "15")))
+    return max(1, _int_from_env("WORKER_MAX_ATTEMPTS", 15))
 
 
 def retry_delay_seconds() -> int:
-    return max(0, int(os.getenv("WORKER_RETRY_DELAY_SECONDS", "60")))
+    return max(0, _int_from_env("WORKER_RETRY_DELAY_SECONDS", 60))
 
 
 def retry_jitter_bounds() -> tuple[int, int]:
-    min_seconds = int(os.getenv("WORKER_RETRY_JITTER_MIN_SECONDS", "5"))
-    max_seconds = int(os.getenv("WORKER_RETRY_JITTER_MAX_SECONDS", "15"))
+    min_seconds = _int_from_env("WORKER_RETRY_JITTER_MIN_SECONDS", 5)
+    max_seconds = _int_from_env("WORKER_RETRY_JITTER_MAX_SECONDS", 15)
     if min_seconds < 0 or max_seconds < min_seconds:
         return (0, 0)
     return (min_seconds, max_seconds)

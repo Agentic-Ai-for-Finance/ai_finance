@@ -76,6 +76,14 @@ def operation_dataset_code(operation_type: str) -> str:
     raise ValueError(f"Unsupported operation type: {operation_type}")
 
 
+def _checking_operation_failure_codes(config: CheckingAccountsConfig) -> list[str]:
+    return [
+        config.dataset_code,
+        config.account_count_dataset_code,
+        config.nominal_balance_dataset_code,
+    ]
+
+
 def load_active_checking_accounts_configs(sb) -> list[CheckingAccountsConfig]:
     response = (
         sb.table(CMF_DATASETS_TABLE)
@@ -263,7 +271,7 @@ async def sync_all_checking_accounts_once(
             )
             results[operation.dataset_code] = 0
             if failure_datasets is not None:
-                failure_datasets.append(operation.dataset_code)
+                failure_datasets.extend(_checking_operation_failure_codes(operation))
     return results
 
 
@@ -279,14 +287,20 @@ async def run_worker(config: CheckingAccountsWorkerConfig | None = None) -> int:
     async with httpx.AsyncClient() as client:
         while True:
             failures: list[str] = []
-            await sync_all_checking_accounts_once(
-                client,
-                sb,
-                config=worker_config,
-                run_date=date.today(),
-                failure_datasets=failures,
-                enable_retries=True,
-            )
+            try:
+                await sync_all_checking_accounts_once(
+                    client,
+                    sb,
+                    config=worker_config,
+                    run_date=date.today(),
+                    failure_datasets=failures,
+                    enable_retries=True,
+                )
+            except Exception as exc:
+                log.warning(
+                    "Checking accounts sync failed: %s: %s", type(exc).__name__, exc
+                )
+                return 1
 
             if failures:
                 log.warning(

@@ -117,6 +117,22 @@ def operation_dataset_code(customer_type: str, operation_type: str) -> str:
         ) from exc
 
 
+def _prepaid_operation_failure_codes(config: PrepaidCardOperationConfig) -> list[str]:
+    return [
+        config.dataset_code,
+        config.transaction_count_dataset_code,
+        config.nominal_volume_dataset_code,
+    ]
+
+
+def _prepaid_card_counts_failure_codes(config: PrepaidCardCountsConfig) -> list[str]:
+    return [
+        config.dataset_code,
+        config.active_cards_total_dataset_code,
+        config.cards_with_operations_dataset_code,
+    ]
+
+
 def load_active_operation_configs(sb) -> list[PrepaidCardOperationConfig]:
     response = (
         sb.table(CMF_DATASETS_TABLE)
@@ -455,7 +471,9 @@ async def sync_all_prepaid_card_ops_once(
             )
             results[counts_config.dataset_code] = 0
             if failure_datasets is not None:
-                failure_datasets.append(counts_config.dataset_code)
+                failure_datasets.extend(
+                    _prepaid_card_counts_failure_codes(counts_config)
+                )
 
     for operation in operations or load_active_operation_configs(sb):
         try:
@@ -480,7 +498,7 @@ async def sync_all_prepaid_card_ops_once(
             )
             results[operation.dataset_code] = 0
             if failure_datasets is not None:
-                failure_datasets.append(operation.dataset_code)
+                failure_datasets.extend(_prepaid_operation_failure_codes(operation))
 
     return results
 
@@ -497,14 +515,20 @@ async def run_worker(config: PrepaidCardOpsWorkerConfig | None = None) -> int:
     async with httpx.AsyncClient() as client:
         while True:
             failures: list[str] = []
-            await sync_all_prepaid_card_ops_once(
-                client,
-                sb,
-                config=worker_config,
-                run_date=date.today(),
-                failure_datasets=failures,
-                enable_retries=True,
-            )
+            try:
+                await sync_all_prepaid_card_ops_once(
+                    client,
+                    sb,
+                    config=worker_config,
+                    run_date=date.today(),
+                    failure_datasets=failures,
+                    enable_retries=True,
+                )
+            except Exception as exc:
+                log.warning(
+                    "Prepaid card ops sync failed: %s: %s", type(exc).__name__, exc
+                )
+                return 1
 
             if failures:
                 log.warning(

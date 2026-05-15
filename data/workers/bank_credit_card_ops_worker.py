@@ -300,6 +300,33 @@ def build_active_cards_lookup(sb):
     return lookup
 
 
+def _credit_operation_failure_codes(
+    config: BankCreditCardOperationConfig,
+) -> list[str]:
+    return [
+        config.dataset_code,
+        config.transaction_count_dataset_code,
+        config.nominal_volume_dataset_code,
+    ]
+
+
+def _credit_card_counts_failure_codes(
+    config: BankCreditCardCountsConfig,
+) -> list[str]:
+    codes = [
+        config.dataset_code,
+        config.active_cards_primary_dataset_code,
+        config.active_cards_supplementary_dataset_code,
+        config.cards_with_operations_primary_dataset_code,
+        config.cards_with_operations_supplementary_dataset_code,
+    ]
+    if config.active_cards_non_banking_dataset_code is not None:
+        codes.append(config.active_cards_non_banking_dataset_code)
+    if config.cards_with_operations_non_banking_dataset_code is not None:
+        codes.append(config.cards_with_operations_non_banking_dataset_code)
+    return codes
+
+
 async def sync_operation_once(
     client: httpx.AsyncClient,
     sb,
@@ -539,7 +566,9 @@ async def sync_all_bank_credit_card_ops_once(
             )
             results[card_counts_config.dataset_code] = 0
             if failure_datasets is not None:
-                failure_datasets.append(card_counts_config.dataset_code)
+                failure_datasets.extend(
+                    _credit_card_counts_failure_codes(card_counts_config)
+                )
 
     for operation in operations or load_active_operation_configs(sb):
         try:
@@ -570,7 +599,7 @@ async def sync_all_bank_credit_card_ops_once(
             )
             results[operation.dataset_code] = 0
             if failure_datasets is not None:
-                failure_datasets.append(operation.dataset_code)
+                failure_datasets.extend(_credit_operation_failure_codes(operation))
 
     return results
 
@@ -589,14 +618,20 @@ async def run_worker(config: BankCreditCardOpsWorkerConfig | None = None) -> int
     async with httpx.AsyncClient() as client:
         while True:
             failures: list[str] = []
-            await sync_all_bank_credit_card_ops_once(
-                client,
-                sb,
-                config=worker_config,
-                run_date=date.today(),
-                failure_datasets=failures,
-                enable_retries=True,
-            )
+            try:
+                await sync_all_bank_credit_card_ops_once(
+                    client,
+                    sb,
+                    config=worker_config,
+                    run_date=date.today(),
+                    failure_datasets=failures,
+                    enable_retries=True,
+                )
+            except Exception as exc:
+                log.warning(
+                    "Bank credit-card ops sync failed: %s: %s", type(exc).__name__, exc
+                )
+                return 1
 
             if failures:
                 log.warning(

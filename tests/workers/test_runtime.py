@@ -16,6 +16,27 @@ def test_worker_run_mode_defaults_to_oneshot(monkeypatch):
     assert runtime.worker_run_mode() == "oneshot"
 
 
+def test_worker_run_mode_invalid_value_falls_back_to_oneshot(monkeypatch):
+    monkeypatch.setenv("WORKER_RUN_MODE", "typo")
+    assert runtime.worker_run_mode() == "oneshot"
+
+
+def test_max_attempts_invalid_value_falls_back_to_default(monkeypatch):
+    monkeypatch.setenv("WORKER_MAX_ATTEMPTS", "abc")
+    assert runtime.max_attempts() == 15
+
+
+def test_retry_delay_invalid_value_falls_back_to_default(monkeypatch):
+    monkeypatch.setenv("WORKER_RETRY_DELAY_SECONDS", "abc")
+    assert runtime.retry_delay_seconds() == 60
+
+
+def test_retry_jitter_bounds_invalid_values_fall_back_to_defaults(monkeypatch):
+    monkeypatch.setenv("WORKER_RETRY_JITTER_MIN_SECONDS", "abc")
+    monkeypatch.setenv("WORKER_RETRY_JITTER_MAX_SECONDS", "def")
+    assert runtime.retry_jitter_bounds() == (5, 15)
+
+
 def test_run_with_retries_retries_until_success(monkeypatch):
     monkeypatch.setenv("WORKER_MAX_ATTEMPTS", "3")
     monkeypatch.setenv("WORKER_RETRY_DELAY_SECONDS", "1")
