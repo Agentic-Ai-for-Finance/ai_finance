@@ -6,9 +6,9 @@ from datetime import date
 from decimal import Decimal
 
 import httpx
-from dotenv import load_dotenv
 from supabase import create_client
 
+from data.env_loader import load_branch_env
 from data.loaders.bank_credit_card_ops_loader import (
     earliest_curated_card_count_month,
     earliest_curated_operation_month,
@@ -72,7 +72,7 @@ class BankCreditCardOpsWorkerConfig:
 
 
 def load_config() -> BankCreditCardOpsWorkerConfig:
-    load_dotenv()
+    load_branch_env()
     return BankCreditCardOpsWorkerConfig(
         supabase_url=os.environ["SUPABASE_URL"],
         supabase_service_role_key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],

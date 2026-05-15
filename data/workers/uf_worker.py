@@ -4,9 +4,9 @@ import os
 from dataclasses import dataclass
 
 import httpx
-from dotenv import load_dotenv
 from supabase import create_client
 
+from data.env_loader import load_branch_env
 from data.loaders.uf_loader import (
     latest_stored_uf_date,
     new_uf_values,
@@ -31,7 +31,7 @@ class UfWorkerConfig:
 
 
 def load_config() -> UfWorkerConfig:
-    load_dotenv()
+    load_branch_env()
     return UfWorkerConfig(
         cmf_api_key=os.environ["CMF_API_KEY"],
         base_endpoint_cmf_uf=os.environ["BASE_ENDPOINT_CMF_UF"],
