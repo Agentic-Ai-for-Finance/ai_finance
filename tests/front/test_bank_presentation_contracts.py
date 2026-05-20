@@ -20,6 +20,7 @@ def test_bank_presentation_uses_curated_corporate_palette_with_fallback():
     assert 'SUMUP: "Sumup"' in src
     assert '"Los Andes prepago": "Los Andes"' in src
     assert 'PREX: "Prex"' in src
+    assert '"Mercado pago": "Mercado Pago"' in src
     assert "const CORPORATE_BANK_COLORS: Record<string, string> = {" in src
     assert '"Líder BCI": "#0053E1"' in src
     assert 'Scotiabank: "#EC111A"' in src

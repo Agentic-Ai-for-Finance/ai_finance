@@ -33,6 +33,7 @@ export const bankDisplayNameMap: Record<string, string> = {
   SUMUP: "Sumup",
   "Los Andes prepago": "Los Andes",
   PREX: "Prex",
+  "Mercado pago": "Mercado Pago",
 };
 
 const CORPORATE_BANK_COLORS: Record<string, string> = {
