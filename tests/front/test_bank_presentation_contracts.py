@@ -8,6 +8,9 @@ def test_bank_presentation_uses_curated_corporate_palette_with_fallback():
     assert '"Líder BCI": "#0053E1"' in src
     assert 'Scotiabank: "#EC111A"' in src
     assert '"Banco Estado": "#FF7900"' in src
+    assert 'Consorcio: "#2F6D9B"' in src
+    assert '"Banco de Chile": "#3A7BFF"' in src
+    assert '"Cencosud Scotiabank": "#4B7A98"' in src
     assert '"Banco Ripley": "#523178"' in src
     assert 'CMF_RIPLEY: "#523178"' in src
     assert '"CMR Falabella": "#3B9326"' in src
