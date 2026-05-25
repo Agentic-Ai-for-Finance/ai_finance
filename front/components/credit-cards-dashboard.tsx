@@ -457,7 +457,12 @@ export function CreditCardsDashboard({
           return accumulator;
         }
 
-        accumulator.volume += Number((row as CreditCardMetricRow).real_value_uf ?? 0) * activeUfValue;
+        const volumeValue = getOperationMetricValue(
+          row as CreditCardMetricRow,
+          "volume",
+          activeUfValue
+        );
+        accumulator.volume += volumeValue ?? 0;
         accumulator.transactions += Number((row as CreditCardMetricRow).transaction_count);
         return accumulator;
       },
@@ -498,7 +503,11 @@ export function CreditCardsDashboard({
         const shareEnd = supportsMarketShare
           ? calculateMarketShares(
               viewKey === "volume"
-                ? Number((row as CreditCardMetricRow).real_value_uf ?? 0) * activeUfValue
+                ? (getOperationMetricValue(
+                    row as CreditCardMetricRow,
+                    "volume",
+                    activeUfValue
+                  ) ?? 0)
                 : Number((row as CreditCardMetricRow).transaction_count),
               viewKey === "volume" ? totals.volume : totals.transactions
             )
@@ -1170,7 +1179,8 @@ function calculateSystemAverage(rows: Array<CreditCardMetricRow | OperationsRate
         return accumulator;
       }
 
-      accumulator.volume += Number(row.real_value_uf ?? 0) * activeUfValue;
+      const volumeValue = getOperationMetricValue(row, "volume", activeUfValue);
+      accumulator.volume += volumeValue ?? 0;
       accumulator.transactions += Number(row.transaction_count);
       return accumulator;
     },
