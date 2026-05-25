@@ -10,6 +10,11 @@ export type BankSummary = {
   marketSharePct: number | null;
 };
 
+export type BankTimeSeries = {
+  name: string;
+  data: Record<string, number | null>;
+};
+
 export type DashboardContext = {
   section: string;
   sectionLabel: string;
@@ -17,10 +22,12 @@ export type DashboardContext = {
   operationLabel: string;
   view: string;
   viewLabel: string;
+  viewUnit: string;
   startMonth: string;
   endMonth: string;
   selectedBanks: { code: string; name: string }[];
   bankSummaries: BankSummary[];
+  timeSeries?: BankTimeSeries[];
 };
 
 type SearchContextValue = {

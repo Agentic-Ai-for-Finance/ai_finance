@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { useOptionalAuth } from "@/lib/clerk-compat";
 import { useSearchContext, formatContextTag } from "@/lib/search-context";
 import { cn } from "@/lib/utils";
@@ -12,8 +13,7 @@ type Source = {
   snippet: string;
 };
 
-type SearchResult = {
-  summary: string;
+type StreamMetadata = {
   sources: Source[];
   query: string;
   model: string;
@@ -31,10 +31,13 @@ type PromptBarProps = {
 export function PromptBar({ variant = "light" }: PromptBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<SearchResult | null>(null);
+  const [streamedText, setStreamedText] = useState("");
+  const [metadata, setMetadata] = useState<StreamMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const { isSignedIn } = useOptionalAuth();
   const dashboard = useSearchContext();
 
@@ -46,7 +49,8 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
   const close = useCallback(() => {
     setIsOpen(false);
     setQuery("");
-    setResult(null);
+    setStreamedText("");
+    setMetadata(null);
     setError(null);
   }, []);
 
@@ -70,14 +74,22 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
     }
   }, [isOpen]);
 
+  // Auto-scroll results as text streams in
+  useEffect(() => {
+    if (isStreaming && resultsRef.current) {
+      resultsRef.current.scrollTop = resultsRef.current.scrollHeight;
+    }
+  }, [streamedText, isStreaming]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = query.trim();
-    if (trimmed.length < 3 || isLoading) return;
+    if (trimmed.length < 3 || isLoading || isStreaming) return;
 
     setIsLoading(true);
     setError(null);
-    setResult(null);
+    setStreamedText("");
+    setMetadata(null);
 
     const body: Record<string, unknown> = { query: trimmed };
     if (dashboard) {
@@ -88,10 +100,12 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
         operationLabel: dashboard.operationLabel,
         view: dashboard.view,
         viewLabel: dashboard.viewLabel,
+        viewUnit: dashboard.viewUnit,
         startMonth: dashboard.startMonth,
         endMonth: dashboard.endMonth,
         selectedBanks: dashboard.selectedBanks,
         bankSummaries: dashboard.bankSummaries,
+        timeSeries: dashboard.timeSeries,
       };
     }
 
@@ -111,20 +125,83 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
               ? "Search limit reached. Try again later."
               : errBody?.error?.message ?? "Something went wrong.";
         setError(message);
+        setIsLoading(false);
         return;
       }
 
-      const data = (await res.json()) as SearchResult;
-      setResult(data);
+      // Check if this is a streaming response or a JSON response (empty results)
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        if (!data.data?.searchResultCount) {
+          setStreamedText("");
+          setMetadata({ sources: [], query: data.data?.query ?? trimmed, model: data.data?.model ?? "", searchResultCount: 0 });
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle SSE stream
+      setIsLoading(false);
+      setIsStreaming(true);
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        setError("Failed to read response stream.");
+        setIsStreaming(false);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let metadataParsed = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmedLine = line.replace(/^data: /, "");
+          if (!trimmedLine || trimmedLine === "[DONE]") continue;
+
+          if (!metadataParsed) {
+            try {
+              const parsed = JSON.parse(trimmedLine) as StreamMetadata;
+              if (parsed.sources) {
+                setMetadata(parsed);
+                metadataParsed = true;
+                continue;
+              }
+            } catch {
+              // Not metadata, treat as text
+            }
+          }
+
+          try {
+            const textChunk = JSON.parse(trimmedLine) as string;
+            setStreamedText((prev) => prev + textChunk);
+          } catch {
+            // Skip malformed chunks
+          }
+        }
+      }
+
+      setIsStreaming(false);
     } catch {
       setError("Network error. Please try again.");
-    } finally {
       setIsLoading(false);
+      setIsStreaming(false);
     }
   }
 
   const isDark = variant === "dark";
   const contextTag = dashboard ? formatContextTag(dashboard) : null;
+  const hasResult = streamedText.length > 0 || metadata !== null;
+  const isEmptyResult = metadata !== null && metadata.searchResultCount === 0;
 
   return (
     <>
@@ -189,7 +266,7 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
                 maxLength={500}
                 className="flex-1 bg-transparent px-3 py-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
               />
-              {isLoading ? (
+              {isLoading || isStreaming ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
               ) : (
                 <button
@@ -203,30 +280,46 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
             </form>
 
             {/* Results area */}
-            <div className="max-h-[60vh] overflow-y-auto">
+            <div ref={resultsRef} className="max-h-[60vh] overflow-y-auto">
               {error && (
                 <div className="px-5 py-4 text-sm text-red-600">{error}</div>
               )}
 
-              {result && result.summary === "" && (
+              {isEmptyResult && (
                 <div className="px-5 py-8 text-center text-sm text-slate-500">
                   No results found. Try a different query.
                 </div>
               )}
 
-              {result && result.summary !== "" && (
+              {hasResult && !isEmptyResult && (
                 <div className="space-y-4 px-5 py-4">
-                  <div className="prose prose-sm max-w-none text-slate-700">
-                    <p className="whitespace-pre-line">{result.summary}</p>
-                  </div>
+                  {streamedText && (
+                    <div className={cn(
+                      "prose prose-sm max-w-none text-slate-700",
+                      // Headers
+                      "prose-h3:text-[13px] prose-h3:font-bold prose-h3:uppercase prose-h3:tracking-wide prose-h3:text-emerald-700 prose-h3:border-l-2 prose-h3:border-emerald-400 prose-h3:pl-3 prose-h3:mt-5 prose-h3:mb-3",
+                      "prose-h4:text-[13px] prose-h4:font-semibold prose-h4:text-slate-900 prose-h4:mt-4 prose-h4:mb-1 prose-h4:pl-3 prose-h4:border-l-2 prose-h4:border-slate-200",
+                      // Body
+                      "prose-p:leading-relaxed prose-p:my-2",
+                      "prose-li:my-0.5",
+                      // Numbers & emphasis
+                      "prose-strong:text-slate-900 prose-strong:font-semibold prose-strong:tracking-tight",
+                    )}>
+                      <ReactMarkdown>{streamedText}</ReactMarkdown>
+                    </div>
+                  )}
 
-                  {result.sources.length > 0 && (
+                  {isStreaming && (
+                    <span className="inline-block h-4 w-1.5 animate-pulse bg-slate-400" />
+                  )}
+
+                  {!isStreaming && metadata && metadata.sources.length > 0 && (
                     <div className="border-t border-slate-100 pt-3">
                       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                        Sources ({result.sources.length})
+                        Sources ({metadata.sources.length})
                       </p>
                       <ul className="space-y-2">
-                        {result.sources.map((source, i) => (
+                        {metadata.sources.map((source, i) => (
                           <li key={source.url} className="group flex items-start gap-2">
                             <span className="mt-0.5 shrink-0 font-mono text-[10px] text-slate-400">
                               [{i + 1}]
@@ -248,13 +341,15 @@ export function PromptBar({ variant = "light" }: PromptBarProps) {
                     </div>
                   )}
 
-                  <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-400">
-                    {result.searchResultCount} results via {result.model}
-                  </div>
+                  {!isStreaming && metadata && (
+                    <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-400">
+                      {metadata.searchResultCount} results via {metadata.model}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {!result && !error && !isLoading && (
+              {!hasResult && !error && !isLoading && !isStreaming && (
                 <div className="px-5 py-6 text-center">
                   <p className="text-sm text-slate-500">
                     {dashboard

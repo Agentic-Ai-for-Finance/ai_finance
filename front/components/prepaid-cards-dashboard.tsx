@@ -702,6 +702,7 @@ export function PrepaidCardsDashboard({
           operationLabel: `${customerType} — ${prepaidOperationLabelMap[operation]}`,
           view: viewKey,
           viewLabel: activeMetric.label,
+          viewUnit: activeMetric.unitLabel,
           startMonth,
           endMonth,
           selectedBanks: selectedSeries.map((b) => ({ code: b.institutionCode, name: b.institutionName })),
@@ -713,6 +714,7 @@ export function PrepaidCardsDashboard({
               growthPct: r.metricGrowthPct,
               marketSharePct: r.marketShareEnd,
             })),
+          timeSeries: selectedSeries.map((b) => ({ name: b.institutionName, data: b.series })),
         }
       : null
   );

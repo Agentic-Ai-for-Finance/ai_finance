@@ -446,6 +446,7 @@ export function CheckingAccountsDashboard({
           operationLabel: checkingAccountOperationLabelMap[operation],
           view: viewKey,
           viewLabel: activeMetric.label,
+          viewUnit: activeMetric.unitLabel,
           startMonth,
           endMonth,
           selectedBanks: selectedSeries.map((b) => ({ code: b.institutionCode, name: b.institutionName })),
@@ -457,6 +458,7 @@ export function CheckingAccountsDashboard({
               growthPct: r.metricGrowthPct,
               marketSharePct: r.marketShareEnd,
             })),
+          timeSeries: selectedSeries.map((b) => ({ name: b.institutionName, data: b.series })),
         }
       : null
   );
