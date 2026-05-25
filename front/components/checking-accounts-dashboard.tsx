@@ -37,6 +37,7 @@ import {
   fetchCheckingAccountMetrics,
 } from "@/lib/supabase-checking-account-queries";
 import { fetchLatestUfValue } from "@/lib/supabase-queries";
+import { useSetSearchContext } from "@/lib/search-context";
 import { useSavedBankPreferences } from "@/lib/user-bank-preferences";
 import { cn } from "@/lib/utils";
 
@@ -435,6 +436,30 @@ export function CheckingAccountsDashboard({
         : []),
     ];
   }, [activeUfValue, firstMonthRows, latestLoadedMonth, latestMonthRows, selectedBanks, selectedSeries, startMonth, supportsMarketShare, viewKey]);
+
+  useSetSearchContext(
+    bankSeries.length
+      ? {
+          section: "checking-accounts",
+          sectionLabel: "Checking Accounts",
+          operation: operation,
+          operationLabel: checkingAccountOperationLabelMap[operation],
+          view: viewKey,
+          viewLabel: activeMetric.label,
+          startMonth,
+          endMonth,
+          selectedBanks: selectedSeries.map((b) => ({ code: b.institutionCode, name: b.institutionName })),
+          bankSummaries: summaryRows
+            .filter((r) => r.institutionCode !== "__others__" && r.institutionCode !== "__system__")
+            .map((r) => ({
+              name: r.institutionName,
+              value: r.currentValue,
+              growthPct: r.metricGrowthPct,
+              marketSharePct: r.marketShareEnd,
+            })),
+        }
+      : null
+  );
 
   function handleResetBanks() {
     setSelectedBanks(defaultSelectedBanks);

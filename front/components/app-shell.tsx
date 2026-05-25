@@ -32,6 +32,7 @@ import {
   prepaidCustomerTypes,
 } from "@/lib/prepaid-card-config";
 import { SiteFooter } from "@/components/site-footer";
+import { PromptBar } from "@/components/prompt-bar";
 import { cn } from "@/lib/utils";
 
 type AppShellProps = {
@@ -106,6 +107,7 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
             <p className="truncate text-lg font-semibold tracking-tight text-slate-950">Taclaro</p>
           </Link>
           <div className="flex items-center gap-2">
+            <PromptBar />
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
@@ -191,7 +193,8 @@ export function AppShell({ children, section, activeOperation, queryParams = {} 
             })}
           </nav>
 
-          <div className="justify-self-end">
+          <div className="flex items-center gap-3 justify-self-end">
+            <PromptBar />
             <OptionalSignedOut>
               <OptionalSignInButton>
                 <button

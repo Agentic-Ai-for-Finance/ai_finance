@@ -46,6 +46,7 @@ import {
   normalizeMonthValue,
   parseMonthValue,
 } from "@/lib/formatters";
+import { useSetSearchContext } from "@/lib/search-context";
 import { useSavedBankPreferences } from "@/lib/user-bank-preferences";
 import { cn } from "@/lib/utils";
 
@@ -682,6 +683,30 @@ export function DebitCardsDashboard({
     supportsMarketShare,
     viewKey,
   ]);
+
+  useSetSearchContext(
+    bankSeries.length
+      ? {
+          section: "debit-cards",
+          sectionLabel: "Debit Cards",
+          operation: operation,
+          operationLabel: debitOperationLabelMap[operation],
+          view: viewKey,
+          viewLabel: activeMetric.label,
+          startMonth,
+          endMonth,
+          selectedBanks: selectedSeries.map((b) => ({ code: b.institutionCode, name: b.institutionName })),
+          bankSummaries: summaryRows
+            .filter((r) => r.institutionCode !== "__others__" && r.institutionCode !== "__system__")
+            .map((r) => ({
+              name: r.institutionName,
+              value: r.currentValue,
+              growthPct: r.metricGrowthPct,
+              marketSharePct: r.marketShareEnd,
+            })),
+        }
+      : null
+  );
 
   function handleResetBanks() {
     setSelectedBanks(defaultSelectedBanks);

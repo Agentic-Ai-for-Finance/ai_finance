@@ -12,6 +12,7 @@ import {
   OptionalUserButton,
 } from "@/lib/clerk-compat";
 import { SiteFooter } from "@/components/site-footer";
+import { PromptBar } from "@/components/prompt-bar";
 import { debitCardOperations } from "@/lib/debit-card-config";
 import { prepaidCardOperations, prepaidCustomerTypes } from "@/lib/prepaid-card-config";
 
@@ -163,6 +164,7 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
             <p className="truncate text-lg font-semibold tracking-tight text-slate-950">Taclaro</p>
           </Link>
           <div className="flex items-center gap-2">
+            <PromptBar />
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
@@ -237,7 +239,8 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
             })}
           </nav>
 
-          <div className="justify-self-end">
+          <div className="flex items-center gap-3 justify-self-end">
+            <PromptBar />
             <OptionalSignedOut>
               <OptionalSignInButton>
                 <button
@@ -309,10 +312,12 @@ function HomeNav({ navStyle = "dark", homeHref = "/" }: HomepagePrototypeProps) 
             </Link>
           ))}
         </nav>
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-3 md:flex">
+          <PromptBar variant="dark" />
           <LoginButton />
         </div>
-        <div className="md:hidden">
+        <div className="flex items-center gap-2 md:hidden">
+          <PromptBar variant="dark" />
           <LoginButton compact />
         </div>
       </div>
