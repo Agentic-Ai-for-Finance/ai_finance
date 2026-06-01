@@ -32,7 +32,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 2. Clone And Enter The Repo
 
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:Agentic-Ai-for-Finance/ai_finance.git
 cd ai_finance
 ```
 
